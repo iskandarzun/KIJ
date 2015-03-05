@@ -1,2 +1,0 @@
-# KIJ
-Tugas KIJ
