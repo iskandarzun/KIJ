@@ -1,11 +1,11 @@
 # TUGAS KIJ E
 
-####Kontributor
+##Kontributor
 
-## [Vijay Fathur](https://github.com/vertikaldash) 5112100043
-## [Faishal Azka J](https://github.com/azukineru) 5112100061
-## [R. M Iskandar Z](https://github.com/IssenShiro) 5112100101
-## [I Gede Arya P](https://github.com/aryashinji) 5112100151
+#### [Vijay Fathur](https://github.com/vertikaldash) 5112100043
+#### [Faishal Azka J](https://github.com/azukineru) 5112100061
+#### [R. M Iskandar Z](https://github.com/IssenShiro) 5112100101
+#### [I Gede Arya P](https://github.com/aryashinji) 5112100151
 
 ## Penjelasan program
 Program chat sederhana berbasis server-client dengan server menggunakan bahasa C
