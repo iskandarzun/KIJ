@@ -13,7 +13,7 @@ sedangkan di sisi client menggunakan bahasa Java.
 
 Program chat ini memiliki prosedur sebagai berikut:
 * Di sini client akan melakukan autentifikasi terlebih dahulu,
-* Setelah terhubung ke server, server akan mengirimkan list user yang sedang onlin ke client,
+* Setelah terhubung ke server, server akan mengirimkan list user yang sedang online ke client,
 * Client mengirimkan pesan ke user yang dituju,
 * Server menerima dan mengirimkan pesan ke client yang dimaksud, kemudian
 * Pesan di tampilkan.
