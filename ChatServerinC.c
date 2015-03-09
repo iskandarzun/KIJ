@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <pthread.h>
 
 //struct client
 typedef struct client_struct
@@ -24,6 +25,13 @@ typedef struct client_struct
     struct client_struct *next;
     
 } client_data;
+
+//struct thread arguments
+typedef struct args
+{
+    client_data client;
+    int client_socket;
+} thread_arguments;
 
 //fungsi insert user
 void insert_user(client_data **head, client_data user_data)
@@ -209,6 +217,46 @@ client_data *head = NULL; //pointer linked list
 char users_online[20][20]; //belum diimplementasi
 int user_count = 0; //belum diimplementasi
 
+//fungsi handler menggunakan thread
+void *user_handler(void *arguments)
+{
+    client_data new_data;
+    thread_arguments *user = arguments;
+    char client_message[2000];
+    int read_size;
+    
+    strcpy(new_data.username, user->client.username);
+    strcpy(new_data.password, user->client.password);
+    strcpy(new_data.ip, user->client.ip);
+    new_data.online = user->client.online;
+    
+    send_data_online_users(&head, user->client_socket); //sampai sini
+    
+    //Menerima pesan dari client
+    
+    while( (read_size = recv(user->client_socket , client_message , 2000 , 0)) > 0 )
+    {
+        //Mengirim pesan kembali ke client
+        write(user->client_socket , client_message , strlen(client_message));
+        puts(client_message);
+        memset(&client_message[0], 0, sizeof(client_message));
+        
+    }
+    
+    if(read_size == 0)
+    {
+        puts("Client disconnected");
+        set_user_offline(&head, new_data);
+        fflush(stdout);
+    }
+    else if(read_size == -1)
+    {
+        perror("recv failed");
+    }
+    
+    return NULL;
+}
+
 int main(int argc , char *argv[])
 {
     int socket_desc, //variable menyimpan tipe socket
@@ -217,10 +265,13 @@ int main(int argc , char *argv[])
         read_size, //variable membaca size
         not_valid = 1; //variable cek autentifikasi
     
+    pthread_t tid;
+    
+    thread_arguments arguments;
+    
     struct sockaddr_in server , client;
     
-    char client_message[2000],
-         str[INET_ADDRSTRLEN],
+    char str[INET_ADDRSTRLEN],
          username[20] = "",
          password[20] = "",
          garbage[20] = ""; //dump
@@ -327,40 +378,19 @@ int main(int argc , char *argv[])
             }
         
             show_online_users(&head);
-
-            if(fork()==0)
+        
+            arguments.client = connected_user;
+            arguments.client_socket = client_sock;
+        
+            if(pthread_create(&tid, NULL, &user_handler, (void *)&arguments) != 0)
             {
-                client_data new_data;
-                strcpy(new_data.username, connected_user.username);
-                strcpy(new_data.password, connected_user.password);
-                strcpy(new_data.ip, connected_user.ip);
-                new_data.online = connected_user.online;
-                
-                send_data_online_users(&head, client_sock); //sampai sini
-
-                //Menerima pesan dari client
-
-                while( (read_size = recv(client_sock , client_message , 2000 , 0)) > 0 )
-                {
-                    //Mengirim pesan kembali ke client
-                    write(client_sock , client_message , strlen(client_message));
-                    puts(client_message);
-                    memset(&client_message[0], 0, sizeof(client_message));
-
-                }
-
-                if(read_size == 0)
-                {
-                    puts("Client disconnected");
-                    set_user_offline(&head, new_data);
-                    fflush(stdout);
-                }
-                else if(read_size == -1)
-                {
-                    perror("recv failed");
-                }
+                printf("error while creating thread!\n");
+            }
+            else
+            {
+                printf("thread has been created!\n");
             }
         
     }
-    return 0;
+    return pthread_join(tid, NULL);
 }
