@@ -455,7 +455,7 @@ void *user_handler(void *arguments)
         error = 0;
         //format_message(response, "HOME","CHOOSE_FEATURE","0","0", "NULL","NULL");
     
-        write(connected_user.socket,response,strlen(response));
+        //write(connected_user.socket,response,strlen(response));
         recv(connected_user.socket,input,MAX_BUFFER,0);
     
         memset(&response[0], 0, sizeof(response));
