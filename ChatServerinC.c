@@ -167,6 +167,29 @@ void send_data_online_users(client_data **head, int clisock, char username[MAX_U
     memset(&done[0], 0, sizeof(done));
 }
 
+//fungsi kirim data user yang baru online P.S = Masih berupa stream
+void broadcast_user_availability(client_data **head)
+{
+    client_data *iter = *head;
+    char garbage[MAX_BUFFER] = ""; //dump
+    for(; iter != NULL; iter = iter->next)
+    {
+        if(iter->online == 1)
+        {
+            char output[MAX_BUFFER];
+            format_message(output, "INCHAT","LIST_USER_SEND","0","0","LIST",iter->username);
+            write(iter->socket,output,strlen(output));
+            recv(iter->socket,garbage,MAX_BUFFER,0); //dump
+            memset(&output[0], 0, sizeof(output));
+        }
+    }
+    char done[MAX_BUFFER];
+    format_message(done, "INCHAT","LIST_USER_DONE","0","0","NULL","0");
+    write(iter->socket,done,strlen(done));
+    recv(iter->socket,garbage,MAX_BUFFER,0); //dump
+    memset(&done[0], 0, sizeof(done));
+}
+
 //fungsi cek username ada atau tidak
 bool username_exist(client_data **head, char username[MAX_USERNAME])
 {
@@ -334,6 +357,7 @@ void signup(client_data *connected_user, char client_ip[MAX_IP])
         format_message(output, "INCHAT", "SIGNUP_SUCCESS", "0", connected_user->username, "NULL", "NULL");
         write(connected_user->socket,output,strlen(output));
         recv(connected_user->socket,garbage,MAX_BUFFER,0);
+        broadcast_user_availability(&head);
         printf("%s is connected with ip = %s\n", connected_user->username, connected_user->ip);
         memset(&output[0], 0, sizeof(output));
     }
@@ -399,6 +423,7 @@ void login(client_data *connected_user, char client_ip[MAX_IP])
         //strcpy(connected_user->ip, client_ip);
         not_valid=0;
         printf("%s is connected with ip = %s\n", connected_user->username, connected_user->ip);
+        broadcast_user_availability(&head);
         memset(&output[0], 0, sizeof(output));
     }
     
@@ -510,6 +535,7 @@ void *user_handler(void *arguments)
     {
         puts("Client disconnected");
         set_user_offline(&head, connected_user);
+        broadcast_user_availability(&head);
         fflush(stdout);
     }
     else if(read_size == -1)
