@@ -453,7 +453,7 @@ void *user_handler(void *arguments)
     {
         //clear_buffer_protocol(buffer_protocol);
         error = 0;
-        format_message(response, "HOME","CHOOSE_FEATURE","0","0", "NULL","NULL");
+        //format_message(response, "HOME","CHOOSE_FEATURE","0","0", "NULL","NULL");
     
         write(connected_user.socket,response,strlen(response));
         recv(connected_user.socket,input,MAX_BUFFER,0);
