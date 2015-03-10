@@ -145,7 +145,7 @@ void show_all_users(client_data **head)
 }
 
 //fungsi kirim data user yang online P.S = Masih berupa stream
-void send_data_online_users(client_data **head, int clisock)
+void send_data_online_users(client_data **head, int clisock, char username[MAX_USERNAME])
 {
     client_data *iter = *head;
     char garbage[MAX_BUFFER] = ""; //dump
@@ -154,14 +154,14 @@ void send_data_online_users(client_data **head, int clisock)
         if(iter->online == 1)
         {
             char output[MAX_BUFFER];
-            format_message(output, "SEND_USER","LIST_SEND","0","0","LIST",iter->username);
+            format_message(output, "INCHAT","LIST_USER_SEND","0",username,"LIST",iter->username);
             write(clisock,output,strlen(output));
             recv(clisock,garbage,MAX_BUFFER,0); //dump
             memset(&output[0], 0, sizeof(output));
         }
     }
     char done[MAX_BUFFER];
-    format_message(done, "SEND_USER","LIST_DONE","0","0","NULL","0");
+    format_message(done, "INCHAT","LIST_USER_DONE","0",username,"NULL","0");
     write(clisock,done,strlen(done));
     recv(clisock,garbage,MAX_BUFFER,0); //dump
     memset(&done[0], 0, sizeof(done));
@@ -483,12 +483,11 @@ void *user_handler(void *arguments)
     } while(error == 1);
     
     show_online_users(&head);
+    send_data_online_users(&head, connected_user.socket, buffer_protocol[3]); //kirim list nama
     
     clear_buffer_protocol(buffer_protocol);
     char client_message[MAX_BUFFER];
     int read_size;
-    
-    send_data_online_users(&head, connected_user.socket); //kirim list nama
     
     //Menerima pesan dari client
     
