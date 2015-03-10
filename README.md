@@ -22,34 +22,33 @@ Protokol yang diterapkan pada program chat ini dijelaskan pada tabel di bawah in
 
 * Proses Sign Up :
 
-Type |  Client 		  |  Server 				|
--------|-------------------|-------------------------|
-State |'SignUp' |'Success/Fail SignUp' |
-Flag |(0) | (1) / (0) |
-Tujuan |null |null |
-Sender |null; Type (1)* |null |
-Content |username,password |null |
+Type |  Client 		  |  Server 				
+-------|-------------------|-------------------------
+State |'SignUp' |'Success/Fail SignUp'
+Flag |(0) | (1) / (0)
+Tujuan |null |null
+Sender |null; Type (1)* |null
+Content |username,password |null
 
 
-* Proses Sign In/Login dan Request List User
-|   	|  Client 		  |  Server 				|
-|---	|---			  |---						|
-|State  |'LogIn'   	  	  |'LogInAttempt'   		|
-|  		|'RequestUser'    |'SendUser'   			|
-|Flag  	|(0)   			  | (1) / (0)				|
-|Tujuan	|null  			  |username					|
-|Sender	|null; Type (2)*  |null; Type (3)*   		|
-|Content|username,pass,key|Array[users,keys]   		|
-Penjelasan :
+* Proses Sign In/Login dan Request List User :
+Type |  Client 		  |  Server 	
+-------|-------------------|-------------------------
+State |'LogIn' |'LogInAttempt'
+ |'RequestUser' |'SendUser'
+Flag |(0) | (1) / (0)
+Tujuan |null |username
+Sender |null; Type (2)* |null; Type (3)*
+Content |username,pass |Array[users]
 
-* Proses Send Message
-|   	|  Client 		  			|  Server 						   |
-|---	|---			  			|---							   |
-|State  |'SendMsg'   	  			|'RecMsg'   					   |
-|Flag  	|(0)   			  			| (1) / (0)						   |
-|Tujuan	|username tujuan  			|username tujuan				   |
-|Sender	|username pengirim;Type(4)*	|username pengirim				   |
-|Content|username 1,username 2,msg  |username 1,username 2,msg;Type(4)*|
+* Proses Send Message :
+Type |  Client 		  |  Server 	
+-------|-------------------|-------------------------
+State |'SendMsg' |'RecMsg'
+Flag |(0) |(1) / (0)
+Tujuan |username tujuan	|username tujuan
+Sender |username pengirim;Type(4)* |username pengirim
+Content |username 1,username 2,msg |username 1,username 2,msg;Type(4)*
 
 Keterangan :
 - Type (1) : Sign Up
