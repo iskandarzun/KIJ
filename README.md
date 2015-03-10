@@ -22,13 +22,13 @@ Protokol yang diterapkan pada program chat ini dijelaskan pada tabel di bawah in
 
 * Proses Sign Up :
 
-- |   	  |  Client 		  |  Server 				|
-- |---	  |---			  	  |---						|
-- |State  |'SignUp'		      |'Success/Fail SignUp'    |
-- |Flag   |(0)   			  | (1) / (0)				|
-- |Tujuan |null  			  |null  					|
-- |Sender |null; Type (1)*    |null   					|
-- |Content|username,password  |   						|
+Type |  Client 		  |  Server 				|
+-------|-------------------|-------------------------|
+State |'SignUp' |'Success/Fail SignUp' |
+Flag |(0) | (1) / (0) |
+Tujuan |null |null |
+Sender |null; Type (1)* |null |
+Content |username,password |null |
 
 
 * Proses Sign In/Login dan Request List User
