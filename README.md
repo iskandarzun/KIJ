@@ -20,14 +20,15 @@ Program chat ini memiliki prosedur sebagai berikut:
 
 Protokol yang diterapkan pada program chat ini dijelaskan pada tabel di bawah ini :
 
-* Proses Sign Up
-|   	|  Client 		  |  Server 				|
-|---	|---			  |---						|
-|State  |'SignUp'		  |'Success/Fail SignUp'    |
-|Flag  	|(0)   			  | (1) / (0)				|
-|Tujuan	|null  			  |null  					|
-|Sender	|null; Type (1)*  |null   					|
-|Content|username,password|   						|
+* Proses Sign Up :
+
+- |   	  |  Client 		  |  Server 				|
+- |---	  |---			  	  |---						|
+- |State  |'SignUp'		      |'Success/Fail SignUp'    |
+- |Flag   |(0)   			  | (1) / (0)				|
+- |Tujuan |null  			  |null  					|
+- |Sender |null; Type (1)*    |null   					|
+- |Content|username,password  |   						|
 
 
 * Proses Sign In/Login dan Request List User
