@@ -11,17 +11,22 @@
 #include <unistd.h>
 #include <pthread.h>
 
+#define MAX_BUFFER 2048
+#define MAX_IP 20
+#define MAX_USERNAME 1024
+#define MAX_PASSWORD 1024
+
 //struct client
 typedef struct client_struct
 {
     char ip[20];
-    char username[20];
-    char password[20];
+    char username[MAX_USERNAME];
+    char password[MAX_PASSWORD];
     int busy;
     int online;
     int user_number;
     
-    int number;
+    int session_key;
     struct client_struct *next;
     
 } client_data;
@@ -29,8 +34,9 @@ typedef struct client_struct
 //struct thread arguments
 typedef struct args
 {
-    client_data client;
+    int thread_id;
     int client_socket;
+    char client_ip[MAX_IP];
 } thread_arguments;
 
 //fungsi insert user
@@ -125,21 +131,21 @@ void show_all_users(client_data **head)
 void send_data_online_users(client_data **head, int clisock)
 {
     client_data *iter = *head;
-    char garbage[20] = ""; //dump
+    char garbage[MAX_BUFFER] = ""; //dump
     for(; iter != NULL; iter = iter->next)
     {
         if(iter->online == 1)
         {
             write(clisock,iter->username,strlen(iter->username));
-            recv(clisock,garbage,20,0); //dump
+            recv(clisock,garbage,MAX_BUFFER,0); //dump
         }
     }
     write(clisock,"done",strlen("done"));
-    recv(clisock,garbage,20,0); //dump
+    recv(clisock,garbage,MAX_BUFFER,0); //dump
 }
 
 //fungsi cek username ada atau tidak
-bool username_exist(client_data **head, char username[20])
+bool username_exist(client_data **head, char username[MAX_USERNAME])
 {
     client_data *iter = *head;
     for(; iter != NULL; iter = iter->next)
@@ -167,7 +173,7 @@ bool user_authentication(client_data **head, client_data user)
 }
 
 //fungsi hapus user
-void delete_user(client_data **head, char username_find[20])
+void delete_user(client_data **head, char username_find[MAX_USERNAME])
 {
     client_data *iter = *head, *prev = NULL;
     for(; iter != NULL; prev = iter, iter = iter->next)
@@ -220,21 +226,53 @@ int user_count = 0; //belum diimplementasi
 //fungsi handler menggunakan thread
 void *user_handler(void *arguments)
 {
-    client_data new_data;
+    //Autentikasi user
     thread_arguments *user = arguments;
-    char client_message[2000];
+    int not_valid = 1; //variable cek autentifikasi
+    char username[MAX_USERNAME] = "",
+         password[MAX_PASSWORD] = "",
+         garbage[MAX_BUFFER] = "";
+    
+    client_data connected_user;
+    
+    write(user->client_socket,"Please enter username:",strlen("Please enter username\n"));
+    recv(user->client_socket,username,MAX_BUFFER,0);
+    
+    write(user->client_socket,"Please enter password:",strlen("Please enter password\n"));
+    recv(user->client_socket,password,MAX_BUFFER,0);
+    
+    strcpy(connected_user.username, username);
+    strcpy(connected_user.password, password);
+    
+    //Autentikasi
+    if(user_authentication(&head, connected_user) == true)
+    {
+        write(user->client_socket,"Authenticated\n",strlen("Authenticated\n"));
+        recv(user->client_socket,garbage,MAX_BUFFER,0);
+        set_user_online(&head, connected_user);
+        set_ip(&head, connected_user, user->client_ip);
+        strcpy(connected_user.ip, user->client_ip);
+        not_valid=0;
+        printf("%s is connected with ip = %s\n", connected_user.username, connected_user.ip);
+    }
+    
+    if(not_valid==1)
+    {
+        write(user->client_socket,"Invalid username or password\n",strlen("Invalid username or password\n"));
+        recv(user->client_socket,garbage,MAX_BUFFER,0);
+        return(0);
+    }
+    
+    show_online_users(&head);
+    
+    char client_message[MAX_BUFFER];
     int read_size;
     
-    strcpy(new_data.username, user->client.username);
-    strcpy(new_data.password, user->client.password);
-    strcpy(new_data.ip, user->client.ip);
-    new_data.online = user->client.online;
-    
-    send_data_online_users(&head, user->client_socket); //sampai sini
+    send_data_online_users(&head, user->client_socket); //kirim list nama
     
     //Menerima pesan dari client
     
-    while( (read_size = recv(user->client_socket , client_message , 2000 , 0)) > 0 )
+    while( (read_size = recv(user->client_socket , client_message , MAX_BUFFER , 0)) > 0 )
     {
         //Mengirim pesan kembali ke client
         write(user->client_socket , client_message , strlen(client_message));
@@ -246,7 +284,7 @@ void *user_handler(void *arguments)
     if(read_size == 0)
     {
         puts("Client disconnected");
-        set_user_offline(&head, new_data);
+        set_user_offline(&head, connected_user);
         fflush(stdout);
     }
     else if(read_size == -1)
@@ -262,8 +300,8 @@ int main(int argc , char *argv[])
     int socket_desc, //variable menyimpan tipe socket
         client_sock, //variable socket client
         conn, //variable koneksi
-        read_size, //variable membaca size
-        not_valid = 1; //variable cek autentifikasi
+        thread_counter = 0, //thread id counter
+        read_size; //variable membaca size
     
     pthread_t tid;
     
@@ -272,9 +310,9 @@ int main(int argc , char *argv[])
     struct sockaddr_in server , client;
     
     char str[INET_ADDRSTRLEN],
-         username[20] = "",
-         password[20] = "",
-         garbage[20] = ""; //dump
+         username[MAX_USERNAME] = "",
+         password[MAX_PASSWORD] = "",
+         garbage[MAX_BUFFER] = ""; //dump
     
     //data user P.S masih di deklarasi di awal, belum membuat sendiri
     client_data user1;
@@ -347,40 +385,9 @@ int main(int argc , char *argv[])
             }
             puts("Connection accepted");
         
-            //Autentikasi user
-            client_data connected_user;
-            write(client_sock,"Please enter username:",strlen("Please enter username\n"));
-            recv(client_sock,username,20,0);
-        
-            write(client_sock,"Please enter password:",strlen("Please enter password\n"));
-            recv(client_sock,password,20,0);
-        
-            strcpy(connected_user.username, username);
-            strcpy(connected_user.password, password);
-
-            //Autentikasi
-            if(user_authentication(&head, connected_user) == true)
-            {
-                write(client_sock,"Authenticated\n",strlen("Authenticated\n"));
-                recv(client_sock,garbage,20,0);
-                set_user_online(&head, connected_user);
-                set_ip(&head, connected_user, str);
-                strcpy(connected_user.ip, str);
-                not_valid=0;
-                printf("%s is connected with ip = %s\n", connected_user.username, connected_user.ip);
-            }
-
-            if(not_valid==1)
-            {
-                write(client_sock,"Invalid username or password\n",strlen("Invalid username or password\n"));
-                recv(client_sock,garbage,20,0);
-                return(0);
-            }
-        
-            show_online_users(&head);
-        
-            arguments.client = connected_user;
+            arguments.thread_id = thread_counter;
             arguments.client_socket = client_sock;
+            strcpy(arguments.client_ip, str);
         
             if(pthread_create(&tid, NULL, &user_handler, (void *)&arguments) != 0)
             {
