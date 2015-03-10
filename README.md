@@ -32,16 +32,18 @@ Content |username,password |null
 
 
 * Proses Sign In/Login dan Request List User :
+
 Type |  Client 		  |  Server 	
 -------|-------------------|-------------------------
 State |'LogIn' |'LogInAttempt'
- |'RequestUser' |'SendUser'
+  |'RequestUser' |'SendUser'
 Flag |(0) | (1) / (0)
 Tujuan |null |username
 Sender |null; Type (2)* |null; Type (3)*
 Content |username,pass |Array[users]
 
 * Proses Send Message :
+
 Type |  Client 		  |  Server 	
 -------|-------------------|-------------------------
 State |'SendMsg' |'RecMsg'
