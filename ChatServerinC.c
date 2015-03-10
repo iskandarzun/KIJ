@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <time.h>
 
 #define MAX_BUFFER 2048
 #define MAX_IP 20
@@ -223,44 +224,105 @@ client_data *head = NULL; //pointer linked list
 char users_online[20][20]; //belum diimplementasi
 int user_count = 0; //belum diimplementasi
 
+
+//fungsi signup
+void signup(client_data *connected_user, int client_socket, char client_ip[MAX_IP])
+{
+    char username[MAX_USERNAME] = "",
+    password[MAX_PASSWORD] = "",
+    garbage[MAX_BUFFER] = "";
+    
+    write(client_socket,"Please enter username:",strlen("Please enter username\n"));
+    recv(client_socket,username,MAX_BUFFER,0);
+    
+    write(client_socket,"Please enter password:",strlen("Please enter password\n"));
+    recv(client_socket,password,MAX_BUFFER,0);
+    
+    if(!username_exist(&head, username))
+    {
+        strcpy(connected_user->username, username);
+        strcpy(connected_user->password, password);
+    
+        insert_user(&head, *connected_user);
+        set_ip(&head, *connected_user, client_ip);
+        set_user_online(&head, *connected_user);
+        
+        write(client_socket,"Signup Success!\n",strlen("Signup Success!\n"));
+        recv(client_socket,garbage,MAX_BUFFER,0);
+        printf("%s is connected with ip = %s\n", connected_user->username, connected_user->ip);
+    }
+    else
+    {
+        write(client_socket,"Invalid username or password\n",strlen("Invalid username or password\n"));
+        recv(client_socket,garbage,MAX_BUFFER,0);
+    }
+}
+
+//fungsi login
+void login(client_data *connected_user, int client_socket, char client_ip[MAX_IP])
+{
+    char username[MAX_USERNAME] = "",
+    password[MAX_PASSWORD] = "",
+    garbage[MAX_BUFFER] = "";
+    
+    int not_valid = 1; //variable cek autentifikasi
+
+    write(client_socket,"Please enter username:",strlen("Please enter username\n"));
+    recv(client_socket,username,MAX_BUFFER,0);
+    
+    write(client_socket,"Please enter password:",strlen("Please enter password\n"));
+    recv(client_socket,password,MAX_BUFFER,0);
+    
+    strcpy(connected_user->username, username);
+    strcpy(connected_user->password, password);
+    
+    //Autentikasi
+    if(user_authentication(&head, *connected_user) == true)
+    {
+        write(client_socket,"Authenticated\n",strlen("Authenticated\n"));
+        recv(client_socket,garbage,MAX_BUFFER,0);
+        set_user_online(&head, *connected_user);
+        set_ip(&head, *connected_user, client_ip);
+        //strcpy(connected_user->ip, client_ip);
+        not_valid=0;
+        printf("%s is connected with ip = %s\n", connected_user->username, connected_user->ip);
+    }
+    
+    if(not_valid==1)
+    {
+        write(client_socket,"Invalid username or password\n",strlen("Invalid username or password\n"));
+        recv(client_socket,garbage,MAX_BUFFER,0);
+    }
+}
+
 //fungsi handler menggunakan thread
 void *user_handler(void *arguments)
 {
     //Autentikasi user
     thread_arguments *user = arguments;
-    int not_valid = 1; //variable cek autentifikasi
-    char username[MAX_USERNAME] = "",
+    char mode[MAX_BUFFER] = "",
+         username[MAX_USERNAME] = "",
          password[MAX_PASSWORD] = "",
          garbage[MAX_BUFFER] = "";
     
     client_data connected_user;
     
-    write(user->client_socket,"Please enter username:",strlen("Please enter username\n"));
-    recv(user->client_socket,username,MAX_BUFFER,0);
+    write(user->client_socket,"signup or login? <type it with lowercase>",strlen("Signup or login? <type it type it with lowercase>\n"));
+    recv(user->client_socket,mode,MAX_BUFFER,0);
     
-    write(user->client_socket,"Please enter password:",strlen("Please enter password\n"));
-    recv(user->client_socket,password,MAX_BUFFER,0);
-    
-    strcpy(connected_user.username, username);
-    strcpy(connected_user.password, password);
-    
-    //Autentikasi
-    if(user_authentication(&head, connected_user) == true)
+    if(strcmp(mode, "signup") == 0)
     {
-        write(user->client_socket,"Authenticated\n",strlen("Authenticated\n"));
-        recv(user->client_socket,garbage,MAX_BUFFER,0);
-        set_user_online(&head, connected_user);
-        set_ip(&head, connected_user, user->client_ip);
-        strcpy(connected_user.ip, user->client_ip);
-        not_valid=0;
-        printf("%s is connected with ip = %s\n", connected_user.username, connected_user.ip);
+        signup(&connected_user, user->client_socket, user->client_ip);
     }
-    
-    if(not_valid==1)
+    else
+    if(strcmp(mode, "login") == 0)
     {
-        write(user->client_socket,"Invalid username or password\n",strlen("Invalid username or password\n"));
+        login(&connected_user, user->client_socket, user->client_ip);
+    }
+    else
+    {
+        write(user->client_socket,"ERROR INPUT!!!\n",strlen("ERROR INPUT!!!\n"));
         recv(user->client_socket,garbage,MAX_BUFFER,0);
-        return(0);
     }
     
     show_online_users(&head);
@@ -313,6 +375,8 @@ int main(int argc , char *argv[])
          username[MAX_USERNAME] = "",
          password[MAX_PASSWORD] = "",
          garbage[MAX_BUFFER] = ""; //dump
+    
+    srand(time(NULL));
     
     //data user P.S masih di deklarasi di awal, belum membuat sendiri
     client_data user1;
