@@ -3,6 +3,7 @@ package javaclient;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -12,32 +13,34 @@ public class JavaClientUI2 extends javax.swing.JFrame {
 
     private int port;
     private String username;
+    private String password;
     private InetAddress servAddr;
         
     private String receiver;
     private javaClient client;
-    
+    private JavaClientUILogin uiLogin;
     private boolean connect;
             
-    public JavaClientUI2 (String name, int port, InetAddress ipAddr ) {
+    public JavaClientUI2 (String name, String pass, int port, InetAddress ipAddr, JavaClientUILogin uiL ) {
         initComponents();
         
         this.username = name;
         this.port = port;
         this.servAddr = ipAddr;
         this.LabelUser.setText(name);
+        this.password = pass;
+        this.uiLogin = uiL;
         
-        this.client = new javaClient(this, this.username, this.port, this.servAddr);
+        this.client = new javaClient(this, this.username, this.password, this.port, this.servAddr);
         client.start();
-        if(!client.start()) return;
+        //if(!client.start()) return;
+        if(client.cek2 == false)
+            JOptionPane.showMessageDialog(null, "gagal login!");
+        else{
+            this.setVisible(true);
+            uiLogin.setVisible(false);
+        }
         this.connect = true;
-        
-        //client.start();
-        /*
-        socket = new Socket (this.servAddr, this.port);
-        
-        this.input = new DataInputStream(socket.getInputStream());
-        this.output = new DataOutputStream(socket.getOutputStream());*/
     }
     
     /**
@@ -54,7 +57,7 @@ public class JavaClientUI2 extends javax.swing.JFrame {
         jLabel1 = new javax.swing.JLabel();
         LabelUser = new javax.swing.JLabel();
         jScrollPane3 = new javax.swing.JScrollPane();
-        listUser = new javax.swing.JList();
+        listUser = new javax.swing.JList(client.getUser().toArray());
         initChat = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         chatArea = new javax.swing.JTextArea();
@@ -162,7 +165,7 @@ public class JavaClientUI2 extends javax.swing.JFrame {
                         .addContainerGap())))
         );
 
-        jTabbedPane1.addTab("tab1", jPanel1);
+        jTabbedPane1.addTab("...", jPanel1);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -186,10 +189,12 @@ public class JavaClientUI2 extends javax.swing.JFrame {
 
     private void initChatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_initChatActionPerformed
         if(connect == true){
-            //broadcast
-            client.sendMessage(new chatHandler(chatHandler.MESSAGE, msgInput.getText()));
+            if(listUser.getSelectedValue().equals(evt))
+            client.sendMessage(msgInput.getText());
             msgInput.setText("");
         }
+        else
+            System.out.println("berarti belum konek ??");
     }//GEN-LAST:event_initChatActionPerformed
 
     void append(String s){
