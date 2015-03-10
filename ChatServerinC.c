@@ -12,22 +12,22 @@
 #include <pthread.h>
 #include <time.h>
 
-#define MAX_BUFFER 2048
+#define MAX_BUFFER 4096
 #define MAX_IP 20
 #define MAX_USERNAME 1024
 #define MAX_PASSWORD 1024
 
-//struct client
+//struct client data
 typedef struct client_struct
 {
-    char ip[20];
+    char ip[MAX_IP];
     char username[MAX_USERNAME];
     char password[MAX_PASSWORD];
     int busy;
     int online;
     int user_number;
     
-    int session_key;
+    int socket;
     struct client_struct *next;
     
 } client_data;
@@ -39,6 +39,22 @@ typedef struct args
     int client_socket;
     char client_ip[MAX_IP];
 } thread_arguments;
+
+//fungsi format untuk pesan protocol
+void format_message(char output[MAX_BUFFER], char state[20], char flag[30], char receiver[MAX_USERNAME], char sender[MAX_USERNAME], char content_type[10], char content[MAX_BUFFER/2])
+{
+    strcpy(output, state);
+    strcat(output, "\r\n");
+    strcat(output, flag);
+    strcat(output, "\r\n");
+    strcat(output, receiver);
+    strcat(output, "\r\n");
+    strcat(output, sender);
+    strcat(output, "\r\n");
+    strcat(output, content_type);
+    strcat(output, "\r\n");
+    strcat(output, content);
+}
 
 //fungsi insert user
 void insert_user(client_data **head, client_data user_data)
@@ -137,12 +153,18 @@ void send_data_online_users(client_data **head, int clisock)
     {
         if(iter->online == 1)
         {
-            write(clisock,iter->username,strlen(iter->username));
+            char output[MAX_BUFFER];
+            format_message(output, "SEND_USER","LIST_SEND","0","0","LIST",iter->username);
+            write(clisock,output,strlen(output));
             recv(clisock,garbage,MAX_BUFFER,0); //dump
+            memset(&output[0], 0, sizeof(output));
         }
     }
-    write(clisock,"done",strlen("done"));
+    char done[MAX_BUFFER];
+    format_message(done, "SEND_USER","LIST_DONE","0","0","NULL","0");
+    write(clisock,done,strlen(done));
     recv(clisock,garbage,MAX_BUFFER,0); //dump
+    memset(&done[0], 0, sizeof(done));
 }
 
 //fungsi cek username ada atau tidak
@@ -157,6 +179,19 @@ bool username_exist(client_data **head, char username[MAX_USERNAME])
         }
     }
     return false;
+}
+
+int get_receiver_socket(client_data **head, char receiver[MAX_USERNAME])
+{
+    client_data *iter = *head;
+    for(; iter != NULL; iter = iter->next)
+    {
+        if(strcmp(iter->username, receiver) == 0 && iter->online == 1)
+        {
+            return iter->socket;
+        }
+    }
+    return -1;
 }
 
 //fungsi user autentifikasi
@@ -220,23 +255,73 @@ void delete_all(client_data **head)
     }
 }
 
+//fungsi strip pesan sesuai protocol
+void strip_message(char output[6][MAX_BUFFER], char buffer[MAX_BUFFER])
+{
+    char *container;
+    int counter = 0;
+    
+    container = strtok (buffer,"\r\n");
+    strcpy(output[counter], container); //sini
+    counter++;
+    while (container != NULL && counter <= 5)
+    {
+        container = strtok (NULL, "\r\n");
+        strcpy(output[counter], container);
+        counter++;
+    }
+}
+
+//fungsi free buffer
+void clear_buffer_protocol(char buffer_protocol[6][MAX_BUFFER])
+{
+    for(int counter = 0; counter <= 5; counter++)
+    {
+        memset(&buffer_protocol[counter][0], 0, sizeof(buffer_protocol[counter]));
+    }
+}
+
 client_data *head = NULL; //pointer linked list
 char users_online[20][20]; //belum diimplementasi
 int user_count = 0; //belum diimplementasi
 
 
 //fungsi signup
-void signup(client_data *connected_user, int client_socket, char client_ip[MAX_IP])
+void signup(client_data *connected_user, char client_ip[MAX_IP])
 {
     char username[MAX_USERNAME] = "",
-    password[MAX_PASSWORD] = "",
-    garbage[MAX_BUFFER] = "";
+         password[MAX_PASSWORD] = "",
+         output[MAX_BUFFER] = "",
+         input[MAX_BUFFER] = "",
+         buffer_protocol[6][MAX_BUFFER],
+         *temp,
+         garbage[MAX_BUFFER] = "";
     
-    write(client_socket,"Please enter username:",strlen("Please enter username\n"));
-    recv(client_socket,username,MAX_BUFFER,0);
+    format_message(output, "SIGNUP", "AUTH_REQUIRED", "0", "0", "NULL", "NULL");
+    write(connected_user->socket, output, strlen(output));
     
-    write(client_socket,"Please enter password:",strlen("Please enter password\n"));
-    recv(client_socket,password,MAX_BUFFER,0);
+    recv(connected_user->socket, input, MAX_BUFFER, 0);
+    
+    memset(&output[0], 0, sizeof(output));
+    
+    strip_message(buffer_protocol, input);
+    
+    temp = strtok (buffer_protocol[5], ":");
+    strcpy(username, temp);
+    while (temp != NULL)
+    {
+        temp = strtok (NULL, ":");
+        strcpy(password, temp);
+        break;
+    }
+    
+    /*
+    write(connected_user->socket,"Please enter username:",strlen("Please enter username\n"));
+    recv(connected_user->socket,username,MAX_BUFFER,0);
+    
+    write(connected_user->socket,"Please enter password:",strlen("Please enter password\n"));
+    recv(connected_user->socket,password,MAX_BUFFER,0);
+    */
     
     if(!username_exist(&head, username))
     {
@@ -246,32 +331,59 @@ void signup(client_data *connected_user, int client_socket, char client_ip[MAX_I
         insert_user(&head, *connected_user);
         set_ip(&head, *connected_user, client_ip);
         set_user_online(&head, *connected_user);
-        
-        write(client_socket,"Signup Success!\n",strlen("Signup Success!\n"));
-        recv(client_socket,garbage,MAX_BUFFER,0);
+        format_message(output, "INCHAT", "SIGNUP_SUCCESS", "0", connected_user->username, "NULL", "NULL");
+        write(connected_user->socket,output,strlen(output));
+        recv(connected_user->socket,garbage,MAX_BUFFER,0);
         printf("%s is connected with ip = %s\n", connected_user->username, connected_user->ip);
+        memset(&output[0], 0, sizeof(output));
     }
     else
     {
-        write(client_socket,"Invalid username or password\n",strlen("Invalid username or password\n"));
-        recv(client_socket,garbage,MAX_BUFFER,0);
+        format_message(output, "SIGNUP", "SIGNUP_FAILED", "0", "0", "NULL", "NULL");
+        write(connected_user->socket,output,strlen(output));
+        recv(connected_user->socket,garbage,MAX_BUFFER,0);
+        memset(&output[0], 0, sizeof(output));
     }
 }
 
 //fungsi login
-void login(client_data *connected_user, int client_socket, char client_ip[MAX_IP])
+void login(client_data *connected_user, char client_ip[MAX_IP])
 {
     char username[MAX_USERNAME] = "",
-    password[MAX_PASSWORD] = "",
-    garbage[MAX_BUFFER] = "";
+         password[MAX_PASSWORD] = "",
+         output[MAX_BUFFER] = "",
+         input[MAX_BUFFER] = "",
+         buffer_protocol[6][MAX_BUFFER],
+         *temp,
+         garbage[MAX_BUFFER] = "";
     
     int not_valid = 1; //variable cek autentifikasi
-
-    write(client_socket,"Please enter username:",strlen("Please enter username\n"));
-    recv(client_socket,username,MAX_BUFFER,0);
     
-    write(client_socket,"Please enter password:",strlen("Please enter password\n"));
-    recv(client_socket,password,MAX_BUFFER,0);
+    format_message(output, "LOGIN", "AUTH_REQUIRED", "0", "0", "NULL", "NULL");
+    write(connected_user->socket, output, strlen(output));
+    
+    recv(connected_user->socket, input, MAX_BUFFER, 0);
+    
+    memset(&output[0], 0, sizeof(output));
+    
+    strip_message(buffer_protocol, input);
+    
+    temp = strtok (buffer_protocol[5], ":");
+    strcpy(username, temp);
+    while (temp != NULL)
+    {
+        temp = strtok (NULL, ":");
+        strcpy(password, temp);
+        break;
+    }
+    
+    /*
+    write(connected_user->socket,"Please enter username:",strlen("Please enter username\n"));
+    recv(connected_user->socket,username,MAX_BUFFER,0);
+    
+    write(connected_user->socket,"Please enter password:",strlen("Please enter password\n"));
+    recv(connected_user->socket,password,MAX_BUFFER,0);
+    */
     
     strcpy(connected_user->username, username);
     strcpy(connected_user->password, password);
@@ -279,19 +391,23 @@ void login(client_data *connected_user, int client_socket, char client_ip[MAX_IP
     //Autentikasi
     if(user_authentication(&head, *connected_user) == true)
     {
-        write(client_socket,"Authenticated\n",strlen("Authenticated\n"));
-        recv(client_socket,garbage,MAX_BUFFER,0);
+        format_message(output, "INCHAT", "LOGIN_SUCCESS", "0", connected_user->username, "NULL", "NULL");
+        write(connected_user->socket,output,strlen(output));
+        recv(connected_user->socket,garbage,MAX_BUFFER,0);
         set_user_online(&head, *connected_user);
         set_ip(&head, *connected_user, client_ip);
         //strcpy(connected_user->ip, client_ip);
         not_valid=0;
         printf("%s is connected with ip = %s\n", connected_user->username, connected_user->ip);
+        memset(&output[0], 0, sizeof(output));
     }
     
     if(not_valid==1)
     {
-        write(client_socket,"Invalid username or password\n",strlen("Invalid username or password\n"));
-        recv(client_socket,garbage,MAX_BUFFER,0);
+        format_message(output, "LOGIN", "LOGIN_FAILED", "0", "0", "NULL", "NULL");
+        write(connected_user->socket,output,strlen(output));
+        recv(connected_user->socket,garbage,MAX_BUFFER,0);
+        memset(&output[0], 0, sizeof(output));
     }
 }
 
@@ -301,46 +417,94 @@ void *user_handler(void *arguments)
     //Autentikasi user
     thread_arguments *user = arguments;
     char mode[MAX_BUFFER] = "",
+         input[MAX_BUFFER] = "",
          username[MAX_USERNAME] = "",
          password[MAX_PASSWORD] = "",
-         garbage[MAX_BUFFER] = "";
+         garbage[MAX_BUFFER] = "",
+         response[MAX_BUFFER] = "",
+         buffer_protocol[6][MAX_BUFFER];
     
     client_data connected_user;
+    connected_user.socket = user->client_socket;
     
-    write(user->client_socket,"signup or login? <type it with lowercase>",strlen("Signup or login? <type it type it with lowercase>\n"));
-    recv(user->client_socket,mode,MAX_BUFFER,0);
-    
+    /*
+    write(connected_user.socket,"signup or login? <type it with lowercase>",strlen("Signup or login? <type it type it with lowercase>\n"));
+    recv(connected_user.socket,mode,MAX_BUFFER,0);
+    printf("%s", mode);
     if(strcmp(mode, "signup") == 0)
     {
-        signup(&connected_user, user->client_socket, user->client_ip);
+        signup(&connected_user, user->client_ip);
     }
     else
     if(strcmp(mode, "login") == 0)
     {
-        login(&connected_user, user->client_socket, user->client_ip);
+        login(&connected_user, user->client_ip);
     }
     else
     {
         write(user->client_socket,"ERROR INPUT!!!\n",strlen("ERROR INPUT!!!\n"));
         recv(user->client_socket,garbage,MAX_BUFFER,0);
     }
+    */
+    
+    
+    int error;
+    do
+    {
+        //clear_buffer_protocol(buffer_protocol);
+        error = 0;
+        format_message(response, "HOME","CHOOSE_FEATURE","0","0", "NULL","NULL");
+    
+        write(connected_user.socket,response,strlen(response));
+        recv(connected_user.socket,input,MAX_BUFFER,0);
+    
+        memset(&response[0], 0, sizeof(response));
+        strip_message(buffer_protocol,input);
+    
+        printf("%s\n", buffer_protocol[0]);
+    
+        if(strcmp(buffer_protocol[0], "SIGNUP") == 0)
+        {
+            signup(&connected_user, user->client_ip);
+        }
+        else
+        if(strcmp(buffer_protocol[0], "LOGIN") == 0)
+        {
+            login(&connected_user, user->client_ip);
+        }
+        else
+        {
+            char error_message[MAX_BUFFER] = "";
+            format_message(error_message, "HOME", "ERROR", "0", "0", "NULL", "NULL");
+            write(connected_user.socket,error_message,strlen(error_message));
+            recv(connected_user.socket,garbage,MAX_BUFFER,0);
+            error = 1;
+        }
+    } while(error == 1);
     
     show_online_users(&head);
     
+    clear_buffer_protocol(buffer_protocol);
     char client_message[MAX_BUFFER];
     int read_size;
     
-    send_data_online_users(&head, user->client_socket); //kirim list nama
+    send_data_online_users(&head, connected_user.socket); //kirim list nama
     
     //Menerima pesan dari client
     
-    while( (read_size = recv(user->client_socket , client_message , MAX_BUFFER , 0)) > 0 )
+    while( (read_size = recv(connected_user.socket , client_message , MAX_BUFFER , 0)) > 0 )
     {
         //Mengirim pesan kembali ke client
-        write(user->client_socket , client_message , strlen(client_message));
+        strip_message(buffer_protocol, client_message);
+        int receiver_socket  = get_receiver_socket(&head, buffer_protocol[2]);
+        
+        char output[MAX_BUFFER] = "";
+        format_message(output, "INCHAT", "SEND_MESSAGE", buffer_protocol[2], buffer_protocol[3], "STRING", buffer_protocol[5]);
+        
+        write(receiver_socket , output , strlen(output));
         puts(client_message);
         memset(&client_message[0], 0, sizeof(client_message));
-        
+        memset(&output[0], 0, sizeof(output));
     }
     
     if(read_size == 0)
@@ -453,7 +617,7 @@ int main(int argc , char *argv[])
             arguments.client_socket = client_sock;
             strcpy(arguments.client_ip, str);
         
-            if(pthread_create(&tid, NULL, &user_handler, (void *)&arguments) != 0)
+            if(pthread_create(&tid, NULL, &user_handler, (void *)&arguments) < 0)
             {
                 printf("error while creating thread!\n");
             }
