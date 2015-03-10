@@ -18,10 +18,48 @@ Program chat ini memiliki prosedur sebagai berikut:
 * Server menerima dan mengirimkan pesan ke client yang dimaksud, kemudian
 * Pesan di tampilkan.
 
+Protokol yang diterapkan pada program chat ini dijelaskan pada tabel di bawah ini :
+
+* Proses Sign Up
+|   	|  Client 		  |  Server 				|
+|---	|---			  |---						|
+|State  |'SignUp'		  |'Success/Fail SignUp'    |
+|Flag  	|(0)   			  | (1) / (0)				|
+|Tujuan	|null  			  |null  					|
+|Sender	|null; Type (1)*  |null   					|
+|Content|username,password|   						|
+
+
+* Proses Sign In/Login dan Request List User
+|   	|  Client 		  |  Server 				|
+|---	|---			  |---						|
+|State  |'LogIn'   	  	  |'LogInAttempt'   		|
+|  		|'RequestUser'    |'SendUser'   			|
+|Flag  	|(0)   			  | (1) / (0)				|
+|Tujuan	|null  			  |username					|
+|Sender	|null; Type (2)*  |null; Type (3)*   		|
+|Content|username,pass,key|Array[users,keys]   		|
+Penjelasan :
+
+* Proses Send Message
+|   	|  Client 		  			|  Server 						   |
+|---	|---			  			|---							   |
+|State  |'SendMsg'   	  			|'RecMsg'   					   |
+|Flag  	|(0)   			  			| (1) / (0)						   |
+|Tujuan	|username tujuan  			|username tujuan				   |
+|Sender	|username pengirim;Type(4)*	|username pengirim				   |
+|Content|username 1,username 2,msg  |username 1,username 2,msg;Type(4)*|
+
+Keterangan :
+- Type (1) : Sign Up
+- Type (2) : Sign In
+- Type (3) : SendArray
+- Type (4) : SendMessage
+
 ## Hal yang harus dikerjakan
 Daftar hal yang harus dikerjakan saat ini, antara lain:
 - [x] Code Dasar Server dan Client
-- [ ] Definisi protokol dan metode yang digunakan
+- [x] Definisi protokol dan metode yang digunakan
 - [ ] Integrasi antara client dan server
 - [ ] Uji coba
 - [ ] Dokumentasi dan diskusi
