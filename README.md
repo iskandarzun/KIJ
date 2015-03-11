@@ -24,39 +24,34 @@ Protokol yang diterapkan pada program chat ini dijelaskan pada tabel di bawah in
 
 Type |  Client 		  |  Server 				
 -------|-------------------|-------------------------
-State |'SignUp' |'Success/Fail SignUp'
-Flag |(0) | (1) / (0)
-Tujuan |null |null
-Sender |null; Type (1)* |null
-Content |username,password |null
+State |'SIGNUP' |'INCHAT' / 'SIGNUP'
+Flag |'AUTH_REQUEST' | 'SIGNUP_SUCCESS' / 'SIGNUP_FAILED'
+Tujuan |0 |0
+Sender |0 | '<Username pengirim>' / 'NULL'
+Type   |'AUTH'  | 'NULL' 
+Content |'<username:password>' | 'NULL'
 
 
 * Proses Sign In/Login dan Request List User :
 
 Type |  Client 		  |  Server 	
 -------|-------------------|-------------------------
-State |'LogIn' |'LogInAttempt'
-  |'RequestUser' |'SendUser'
-Flag |(0) | (1) / (0)
-Tujuan |null |username
-Sender |null; Type (2)* |null; Type (3)*
-Content |username,pass |Array[users]
+State |'LOGIN' |'INCHAT' / 'LOGIN'
+Flag |'AUTH_REQUEST' | 'LOGIN_SUCCESS' / 'LOGIN_FAILED'
+Tujuan |0 |0
+Sender |0 | '<Username pengirim>' / 'NULL'
+Type   |'AUTH'  | 'NULL' 
+Content |'<username:password>' | 'NULL'
 
 * Proses Send Message :
 
 Type |  Client 		  |  Server 	
 -------|-------------------|-------------------------
-State |'SendMsg' |'RecMsg'
-Flag |(0) |(1) / (0)
-Tujuan |username tujuan	|username tujuan
-Sender |username pengirim;Type(4)* |username pengirim
-Content |username 1,username 2,msg |username 1,username 2,msg;Type(4)*
-
-Keterangan :
-- Type (1) : Sign Up
-- Type (2) : Sign In
-- Type (3) : SendArray
-- Type (4) : SendMessage
+State |'INCHAT' |'INCHAT'
+Flag |'SEND_MESSAGE' | 'SEND_MESSAGE'
+Tujuan |'<Username tujuan>' |'<Username tujuan>'
+Sender |'<Username pengirim>' |'<Username pengirim>'
+Content |'<Isi Pesan>' |'<Isi Pesan>'
 
 ## Hal yang harus dikerjakan
 Daftar hal yang harus dikerjakan saat ini, antara lain:
@@ -64,4 +59,4 @@ Daftar hal yang harus dikerjakan saat ini, antara lain:
 - [x] Definisi protokol dan metode yang digunakan
 - [ ] Integrasi antara client dan server
 - [ ] Uji coba
-- [ ] Dokumentasi dan diskusi
+- [x] Dokumentasi dan diskusi
