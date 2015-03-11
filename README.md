@@ -27,9 +27,9 @@ Type |  Client 		  |  Server
 State |'SIGNUP' |'INCHAT' / 'SIGNUP'
 Flag |'AUTH_REQUEST' | 'SIGNUP_SUCCESS' / 'SIGNUP_FAILED'
 Tujuan |0 |0
-Sender |0 | '<Username pengirim>' / 'NULL'
+Sender |0 | 'Username pengirim' / 'NULL'
 Type   |'AUTH'  | 'NULL' 
-Content |'<username:password>' | 'NULL'
+Content |'username:password' | 'NULL'
 
 
 * Proses Sign In/Login dan Request List User :
@@ -39,9 +39,9 @@ Type |  Client 		  |  Server
 State |'LOGIN' |'INCHAT' / 'LOGIN'
 Flag |'AUTH_REQUEST' | 'LOGIN_SUCCESS' / 'LOGIN_FAILED'
 Tujuan |0 |0
-Sender |0 | '<Username pengirim>' / 'NULL'
+Sender |0 | 'Username pengirim' / 'NULL'
 Type   |'AUTH'  | 'NULL' 
-Content |'<username:password>' | 'NULL'
+Content |'username:password' | 'NULL'
 
 * Proses Send Message :
 
@@ -49,9 +49,9 @@ Type |  Client 		  |  Server
 -------|-------------------|-------------------------
 State |'INCHAT' |'INCHAT'
 Flag |'SEND_MESSAGE' | 'SEND_MESSAGE'
-Tujuan |'<Username tujuan>' |'<Username tujuan>'
-Sender |'<Username pengirim>' |'<Username pengirim>'
-Content |'<Isi Pesan>' |'<Isi Pesan>'
+Tujuan |'Username tujuan' |'Username tujuan'
+Sender |'Username pengirim' |'Username pengirim'
+Content |'Isi Pesan' |'Isi Pesan'
 
 ## Hal yang harus dikerjakan
 Daftar hal yang harus dikerjakan saat ini, antara lain:
