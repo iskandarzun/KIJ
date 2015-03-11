@@ -31,9 +31,9 @@ public class javaClient {
     private ArrayList<String> listUser;
 
     String STATE;
-    boolean FLAG;
-    int TUJUAN;
-    int PENGIRIM;
+    String FLAG;
+    String TUJUAN;
+    String PENGIRIM;
     String CONTENT;
     String TYPE;
 
@@ -75,8 +75,7 @@ public class javaClient {
             sOut = new PrintWriter(socket.getOutputStream(), true);
             sIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             stdIn = new BufferedReader(new InputStreamReader(System.in));
-            //input = new ObjectInputStream(socket.getInputStream());
-            //output = new ObjectOutputStream(socket.getOutputStream());
+            
             System.out.println("user :" + this.username + "has connected");
         } catch (Exception ex) {
             String msg2 = "you got error creating streams dude : " + ex;
@@ -84,14 +83,14 @@ public class javaClient {
             // display(msg2);
             return false;
         }
-
+        
         //minta respond success login atau ga
         this.STATE = "LogIn";
-        this.FLAG = false;
-        this.TUJUAN = 0;
-        this.PENGIRIM = 0;
+        this.FLAG = "0";
+        this.TUJUAN = "0";
+        this.PENGIRIM = "0";
         this.CONTENT = this.username + ";" + this.password;
-        this.TYPE = "AUTH";
+        this.TYPE = "Sign In";
         try {
             sOut.write(STATE + "/r/n" + FLAG + "/r/n" + TUJUAN + "/r/n" + PENGIRIM + "/r/n" + TYPE + "/r/n" + CONTENT);
             temp = "";
@@ -110,9 +109,17 @@ public class javaClient {
         temp = "";
         ctr = 0;
         try {
+            //MINTAlist user
+            this.STATE = "LogIn";
+            this.FLAG = "0";
+            this.TUJUAN = "0";
+            this.PENGIRIM = "0";
+            this.CONTENT = 
+            this.TYPE = "SendArray";
+            
             while ((temp = sIn.readLine()) != null) {
-                if (ctr % 6 == 0 && ctr > 0) {
-                    listUser.add(temp); //0 masih maasuk arraylist
+                if (ctr % 6 == 0 && ctr > 0 && !temp.equals("0")) {
+                    listUser.add(temp); 
                 }
             }
         } catch (IOException ex) {
@@ -128,7 +135,6 @@ public class javaClient {
             System.out.println("you got error sir, can't create socket : " + ex);
             return false;
         }
-
         String msg = "Connection signIn accepted " + socket.getInetAddress() + ":" + socket.getPort();
         System.out.println(msg);
 
@@ -142,12 +148,12 @@ public class javaClient {
             System.out.println(msg2);
             return false;
         }
-        this.STATE = "SignIn";
-        this.FLAG = false;
-        this.TUJUAN = 0;
-        this.PENGIRIM = 0;
+        this.STATE = "SIGNUP";
+        this.FLAG = "SIGNUP_REQ";
+        this.TUJUAN = "0";
+        this.PENGIRIM = "0";
         this.CONTENT = this.username + ";" + this.password;
-        this.TYPE = "AUTH";
+        this.TYPE = "Sign Up";
         try {
             sOut.write(STATE + "/r/n" + FLAG + "/r/n" + TUJUAN + "/r/n" + PENGIRIM + "/r/n" + TYPE + "/r/n" + CONTENT);
             //cek ok apa ga? klo OK, tutup socket
@@ -182,9 +188,9 @@ public class javaClient {
     void sendMessage(String msg) { //sendMessage = broadcast
         try {
             this.STATE = "SendMsg";
-            this.FLAG = false;
-            this.TUJUAN = 0;
-            this.PENGIRIM = 0;
+            this.FLAG = "0";
+            this.TUJUAN = "0";
+            this.PENGIRIM = "0";
             this.CONTENT = msg;
             sOut.write(msg);
         } catch (Exception e) {

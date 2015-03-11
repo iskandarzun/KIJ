@@ -212,7 +212,7 @@ public class JavaClientUILogin extends javax.swing.JFrame {
                         Integer.parseInt(portField.getText()),
                         InetAddress.getByName(serverField.getText()));
                 client.startCreate();
-                if (client.cek == true) {
+              /*  if (client.cek == true) {
                     client.disconnect();
                     JOptionPane.showMessageDialog(null, "Anda telah berhasil mendaftar, silahkan Log In");
                     userField.setText("");
@@ -220,7 +220,7 @@ public class JavaClientUILogin extends javax.swing.JFrame {
                     passField2.setText("");
                 } else {
                     System.out.println("socket belum berhenti");
-                }
+                }*/
                 //this.setVisible(false);
                 //chatRoom.setVisible(true);
             } catch (IOException e) {
