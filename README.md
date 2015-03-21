@@ -57,6 +57,7 @@ Content |'Isi Pesan' |'Isi Pesan'
 Daftar hal yang harus dikerjakan saat ini, antara lain:
 - [x] Code Dasar Server dan Client
 - [x] Definisi protokol dan metode yang digunakan
-- [ ] Integrasi antara client dan server
-- [ ] Uji coba
+- [x] Integrasi antara client dan server
+- [x] Uji coba
 - [x] Dokumentasi dan diskusi
+- [ ] fixing bug issues
