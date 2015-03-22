@@ -7,6 +7,8 @@
 #### [R. M Iskandar Z](https://github.com/IssenShiro) 5112100101
 #### [I Gede Arya P](https://github.com/aryashinji) 5112100151
 
+## NOTE : Gunakan stable version client dan server yang menggunakan C++
+
 ## Penjelasan program
 Program chat sederhana berbasis server-client dengan server menggunakan bahasa C
 sedangkan di sisi client menggunakan bahasa Java.
@@ -60,4 +62,5 @@ Daftar hal yang harus dikerjakan saat ini, antara lain:
 - [x] Integrasi antara client dan server
 - [x] Uji coba
 - [x] Dokumentasi dan diskusi
-- [ ] fixing bug issues
+- [x] fixing bug issues
+- [ ] user error handling
