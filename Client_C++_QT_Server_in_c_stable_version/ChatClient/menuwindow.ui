@@ -24,7 +24,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>3</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="connectWindow">
      <widget class="QLineEdit" name="serverAddress">
@@ -149,6 +149,9 @@
         <height>21</height>
        </rect>
       </property>
+      <property name="echoMode">
+       <enum>QLineEdit::Password</enum>
+      </property>
      </widget>
      <widget class="QToolButton" name="loginButton">
       <property name="geometry">
@@ -197,6 +200,9 @@
         <height>21</height>
        </rect>
       </property>
+      <property name="echoMode">
+       <enum>QLineEdit::Password</enum>
+      </property>
      </widget>
      <widget class="QLineEdit" name="confirmPasswordSignup">
       <property name="geometry">
@@ -206,6 +212,9 @@
         <width>231</width>
         <height>21</height>
        </rect>
+      </property>
+      <property name="echoMode">
+       <enum>QLineEdit::Password</enum>
       </property>
      </widget>
      <widget class="QLabel" name="label_3">
