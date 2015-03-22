@@ -72,10 +72,7 @@ void MenuWindow::setChatFriend(int index)
     {
         this->chatFriend = this->onlineUsers[index];
     }
-    else
-    {
-        this->chatFriend = "NONE";
-    }
+    //qDebug("chatfriend di pilih = %s, index = %d", this->onlineUsers[index].toStdString().c_str(), index);
 }
 
 //get function
@@ -134,7 +131,7 @@ void MenuWindow::checkSignup()
 {
     this->socket->write(this->getFormatMessage("SIGNUP", "AUTH_REQ", "0", "0", "AUTH", this->username+":"+this->password).toUtf8());
     this->socket->waitForReadyRead(WAIT_TIME);
-    QString received_message = QString::fromUtf8(this->socket->read(MAX_BUFFER));
+    QString received_message = QString::fromUtf8(this->socket->read(MAX_BUFFER).trimmed());
 
     //qDebug("%s\n", received_message.toStdString().c_str());
 
@@ -148,11 +145,11 @@ void MenuWindow::checkSignup()
 
         this->socket->write(this->getFormatMessage("LIST_USER", "LIST_USER_REQ", "0", this->username, "NULL", "NULL").toUtf8());
         this->socket->waitForReadyRead(WAIT_TIME);
-        received_message = QString::fromUtf8(this->socket->read(MAX_BUFFER));
+        received_message = QString::fromUtf8(this->socket->read(MAX_BUFFER).trimmed());
 
         temp_buffer = this->getBufferProtocol(received_message);
 
-        setOnlineUsers(temp_buffer[5]);
+        setOnlineUsers(temp_buffer[5].trimmed());
 
         ui->stackedWidget->setCurrentWidget(ui->ChatWindow);
     }
@@ -162,7 +159,7 @@ void MenuWindow::checkLogin()
 {
     this->socket->write(this->getFormatMessage("LOGIN", "AUTH_REQ", "0", "0", "AUTH", this->username+":"+this->password).toUtf8());
     this->socket->waitForReadyRead(WAIT_TIME);
-    QString received_message = QString::fromUtf8(this->socket->read(MAX_BUFFER));
+    QString received_message = QString::fromUtf8(this->socket->read(MAX_BUFFER).trimmed());
 
     //qDebug("%s\n", received_message.toStdString().c_str());
 
@@ -177,11 +174,11 @@ void MenuWindow::checkLogin()
 
         this->socket->write(this->getFormatMessage("LIST_USER", "LIST_USER_REQ", "0", this->username, "NULL", "NULL").toUtf8());
         this->socket->waitForReadyRead(WAIT_TIME);
-        received_message = QString::fromUtf8(this->socket->read(MAX_BUFFER));
+        received_message = QString::fromUtf8(this->socket->read(MAX_BUFFER).trimmed());
 
         temp_buffer = this->getBufferProtocol(received_message);
 
-        setOnlineUsers(temp_buffer[5]);
+        setOnlineUsers(temp_buffer[5].trimmed());
 
         ui->stackedWidget->setCurrentWidget(ui->ChatWindow);
     }
@@ -211,6 +208,8 @@ void MenuWindow::setOnlineUsers(QString list_user)
 {
     QRegExp delimiter(":");
     QStringList all_list = list_user.split(delimiter);
+    all_list.pop_back();
+    all_list.removeOne(this->username);
     this->onlineUsers.clear();
     this->onlineUsers = all_list;
 
@@ -222,7 +221,7 @@ void MenuWindow::setOnlineUsers(QString list_user)
     int index;
 
 
-    for (index = 0; index < this->onlineUsers.count()-1; index++)
+    for (index = 0; index < this->onlineUsers.count(); index++)
     {
         tempname.clear();
         //qDebug("index ke : %d, jumlah user = %d\n", index, this->onlineUsers.count());
@@ -233,6 +232,37 @@ void MenuWindow::setOnlineUsers(QString list_user)
             ui->listUserWidget->addItem(users);
         }
     }
+
+    //qDebug("DISINI jumlah online = %d\n", this->onlineUsers.count() /*this->onlineUsers[index].toStdString().c_str()*/);
+}
+
+void MenuWindow::setListUserOnline(QString user)
+{
+    this->onlineUsers.push_back(user);
+    int index = this->onlineUsers.count();
+
+    //qDebug("DISINI jumlah %d\n", index /*this->onlineUsers[index].toStdString().c_str()*/);
+    QListWidgetItem *newuser = NULL;
+
+    newuser = new QListWidgetItem(user, 0, index);
+    ui->listUserWidget->addItem(newuser);
+}
+
+void MenuWindow::setListUserOffline(QString user)
+{
+    int index;
+
+    for(index = 0; index < this->onlineUsers.size(); index++)
+    {
+        if(this->onlineUsers[index] == user)
+        {
+            break;
+        }
+    }
+
+    this->onlineUsers.removeAt(index);
+
+    ui->listUserWidget->takeItem(index);
 }
 
 void MenuWindow::sendMessage()
@@ -248,13 +278,19 @@ void MenuWindow::standByRead()
 
     if(ui->stackedWidget->currentWidget() == ui->ChatWindow)
     {
-        QString received_message = QString::fromUtf8(this->socket->read(MAX_BUFFER));
+        QString received_message = QString::fromUtf8(this->socket->read(MAX_BUFFER).trimmed());
         QStringList temp_buffer = this->getBufferProtocol(received_message);
 
-        if(temp_buffer[1] == "LIST_USER_SEND")
+        if(temp_buffer[1] == "LIST_USER_SEND_ONLINE")
         {
-            qDebug("%s\n", temp_buffer[5].toStdString().c_str());
-            this->setOnlineUsers(temp_buffer[5]);
+            //qDebug("%s\n", temp_buffer[5].toStdString().c_str());
+            this->setListUserOnline(temp_buffer[5].trimmed());
+        }
+        else
+        if(temp_buffer[1] == "LIST_USER_SEND_OFFLINE")
+        {
+            //qDebug("%s\n", temp_buffer[5].toStdString().c_str());
+            this->setListUserOffline(temp_buffer[5].trimmed());
         }
         else
         if(temp_buffer[1] == "SEND_RECEIVE")
@@ -283,4 +319,7 @@ void MenuWindow::logout()
 {
     this->socket->disconnectFromHost();
     ui->stackedWidget->setCurrentWidget(ui->connectWindow);
+    this->onlineUsers.clear();
+    ui->listUserWidget->clear();
+    ui->chatTextEdit->clear();
 }

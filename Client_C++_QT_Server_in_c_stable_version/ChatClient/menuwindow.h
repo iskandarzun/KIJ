@@ -25,7 +25,7 @@ public slots:
     void connect_slots();
 
 private slots:
-    //set function
+    //get function
     QString getServerAdress();
     QString getUsername();
     QString getPassword();
@@ -33,13 +33,15 @@ private slots:
     QString getLoggedUser();
     QString getChatFriend();
 
-    //get function
+    //set function
     void setServerAddress(QString);
     void setUsername(QString);
     void setPassword(QString);
     void setConfirmPassword(QString);
     void setLoggedUser(QString);
     void setChatFriend(int);
+    void setListUserOnline(QString);
+    void setListUserOffline(QString);
 
     //system function
     void goToSignup();

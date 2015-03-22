@@ -173,12 +173,14 @@ void send_data_online_users(client_data **head, int clisock, char username[MAX_U
 }
 
 //fungsi kirim data user yang baru online P.S = Masih berupa stream
-void broadcast_user_availability(client_data **head, char except[MAX_USERNAME])
+void broadcast_user_availability(client_data **head, char except[MAX_USERNAME], char state[10])
 {
     client_data *iter = *head;
-    char data_users[MAX_BUFFER] = "";
+    //char data_users[MAX_BUFFER] = "";
     
     printf("SEBELUM BROADCAST\n");
+    
+    /*
     for(; iter != NULL; iter = iter->next)
     {
         if(iter->online == 1)
@@ -187,11 +189,20 @@ void broadcast_user_availability(client_data **head, char except[MAX_USERNAME])
             strcat(data_users, ":");
             //printf("ada si : %s\n", iter->username);
         }
-    }
+    }*/
     
     char output[MAX_BUFFER];
-    format_message(output, "LIST_USER","LIST_USER_SEND","0","0","LIST",data_users);
-    iter = *head;
+    if(strcmp(state, "ONLINE") == 0)
+    {
+        format_message(output, "LIST_USER","LIST_USER_SEND_ONLINE","0","0","LIST",except);
+    }
+    else
+    if (strcmp(state, "OFFLINE") == 0)
+    {
+        format_message(output, "LIST_USER","LIST_USER_SEND_OFFLINE","0","0","LIST",except);
+    }
+    
+    //iter = *head;
     for(; iter != NULL; iter = iter->next)
     {
         if(iter->online == 1 && strcmp(iter->username, except) != 0)
@@ -335,7 +346,7 @@ void signup(client_data *connected_user, char client_ip[MAX_IP], char username[M
         format_message(output, "LIST_USER", "SIGNUP_SUCCESS", "0", connected_user->username, "NULL", "NULL");
         write(connected_user->socket,output,strlen(output));
         
-        broadcast_user_availability(&head, connected_user->username);
+        broadcast_user_availability(&head, connected_user->username, "ONLINE");
         printf("%s is connected with ip = %s\n", connected_user->username, connected_user->ip);
         memset(&output[0], 0, sizeof(output));
     }
@@ -368,7 +379,7 @@ void login(client_data *connected_user, char client_ip[MAX_IP], char username[MA
         set_ip(&head, *connected_user, client_ip);
         
         printf("%s is connected with ip = %s\n", connected_user->username, connected_user->ip);
-        broadcast_user_availability(&head, connected_user->username);
+        broadcast_user_availability(&head, connected_user->username, "ONLINE");
         memset(&output[0], 0, sizeof(output));
     }
     else
@@ -501,7 +512,7 @@ void *user_handler(void *arguments)
     {
         puts("Client disconnected");
         set_user_offline(&head, connected_user);
-        //broadcast_user_availability(&head);
+        broadcast_user_availability(&head, connected_user.username, "OFFLINE");
         fflush(stdout);
     }
     else if(read_size == -1)
