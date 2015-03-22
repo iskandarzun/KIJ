@@ -62,5 +62,6 @@ Daftar hal yang harus dikerjakan saat ini, antara lain:
 - [x] Integrasi antara client dan server
 - [x] Uji coba
 - [x] Dokumentasi dan diskusi
-- [x] fixing bug issues
+- [x] fixing bug issues part 1 (cara kerja sistem)
 - [ ] user error handling
+- [ ] Pengamanan sistem (implementasi enkripsi dan lain-lain)
