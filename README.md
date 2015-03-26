@@ -7,11 +7,11 @@
 #### [R. M Iskandar Z](https://github.com/IssenShiro) 5112100101
 #### [I Gede Arya P](https://github.com/aryashinji) 5112100151
 
-## NOTE : Gunakan stable version client dan server yang menggunakan C++
+## NOTE : Gunakan stable version server dan client yang menggunakan C++ QT
 
 ## Penjelasan program
 Program chat sederhana berbasis server-client dengan server menggunakan bahasa C
-sedangkan di sisi client menggunakan bahasa Java.
+sedangkan di sisi client menggunakan bahasa C++ (Stable) QT dan Java (Development).
 
 Program chat ini memiliki prosedur sebagai berikut:
 * Di sini client akan melakukan autentifikasi terlebih dahulu,
@@ -65,3 +65,4 @@ Daftar hal yang harus dikerjakan saat ini, antara lain:
 - [x] fixing bug issues part 1 (cara kerja sistem)
 - [ ] user error handling
 - [ ] Pengamanan sistem (implementasi enkripsi dan lain-lain)
+- [ ] Uji coba 2 (Pengamanan sistem)
