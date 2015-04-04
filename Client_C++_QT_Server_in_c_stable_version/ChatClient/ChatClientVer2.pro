@@ -13,8 +13,12 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        menuwindow.cpp
+        menuwindow.cpp \
+    connection.cpp \
+    clientdata.cpp
 
-HEADERS  += menuwindow.h
+HEADERS  += menuwindow.h \
+    connection.h \
+    clientdata.h
 
 FORMS    += menuwindow.ui

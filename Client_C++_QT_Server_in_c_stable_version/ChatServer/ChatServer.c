@@ -25,7 +25,7 @@ typedef struct client_struct
     char password[MAX_PASSWORD];
     int busy;
     int online;
-    int user_number;
+    int session_key;
     int socket;
     struct client_struct *next;
 } client_data;
@@ -41,6 +41,20 @@ typedef struct args
 client_data *head = NULL; //pointer linked list
 char users_online[20][20]; //belum diimplementasi
 int user_count = 0; //belum diimplementasi
+
+//fungsi write data (encrypt here)
+void send_data(int socket, char output[MAX_BUFFER])
+{
+    write(socket,output,strlen(output));
+}
+
+//fungsi read data (decrypt here)
+int read_data(int socket, char input[MAX_BUFFER])
+{
+    int read_size;
+    read_size = recv(socket , input , MAX_BUFFER , 0);
+    return read_size;
+}
 
 //fungsi format untuk pesan protocol
 void format_message(char output[MAX_BUFFER], char state[20], char flag[30], char receiver[MAX_USERNAME], char sender[MAX_USERNAME], char content_type[10], char content[MAX_BUFFER/2])
@@ -103,6 +117,7 @@ void set_user_online(client_data **head, client_data user)
         {
             iter->online = 1;
             iter->socket = user.socket;
+            iter->session_key = user.session_key;
             return;
         }
     }
@@ -117,6 +132,7 @@ void set_user_offline(client_data **head, client_data user)
         if(strcmp(iter->username, user.username) == 0)
         {
             iter->online = 0;
+            iter->session_key = 0;
             return;
         }
     }
@@ -166,7 +182,7 @@ void send_data_online_users(client_data **head, int clisock, char username[MAX_U
     
     char output[MAX_BUFFER];
     format_message(output, "LIST_USER","LIST_USER_SEND","0",username,"LIST",data_users);
-    write(clisock,output,strlen(output));
+    send_data(clisock,output);
     printf("SESUDAH KIRIM, panjang = %d\n", (int)strlen(output));
     
     memset(&output[0], 0, sizeof(output));
@@ -207,7 +223,7 @@ void broadcast_user_availability(client_data **head, char except[MAX_USERNAME], 
     {
         if(iter->online == 1 && strcmp(iter->username, except) != 0)
         {
-            write(iter->socket,output,strlen(output));
+            send_data(iter->socket, output);
             //printf("kirim ke : %s\n", iter->username);
         }
     }
@@ -228,6 +244,37 @@ bool username_exist(client_data **head, char username[MAX_USERNAME])
     }
     return false;
 }
+
+
+//fungsi cek session
+bool check_session(client_data **head, client_data *connected_user, int session_key)
+{
+    client_data *iter = *head;
+    for(; iter != NULL; iter = iter->next)
+    {
+        if((strcmp(iter->username, connected_user->username) == 0) && (iter->session_key == session_key))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+//fungsi cek session exist
+bool is_session_exist(client_data **head, int session_key)
+{
+    client_data *iter = *head;
+    for(; iter != NULL; iter = iter->next)
+    {
+        if(iter->session_key == session_key)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 
 //fungsi get receiver socket
 int get_receiver_socket(client_data **head, char receiver[MAX_USERNAME])
@@ -334,17 +381,37 @@ void signup(client_data *connected_user, char client_ip[MAX_IP], char username[M
 {
     char output[MAX_BUFFER] = "",
          input[MAX_BUFFER] = "",
+         user_and_session[MAX_BUFFER] = "",
          buffer_protocol[6][MAX_BUFFER];
     
     if(!username_exist(&head, username))
     {
         strcpy(connected_user->username, username);
         strcpy(connected_user->password, password);
+        
+        //session key give
+        int random_number = rand();
+        char buffer_random[MAX_BUFFER] = "";
+        
+        while (is_session_exist(&head, random_number))
+        {
+            random_number = rand();
+        }
+        
+        connected_user->session_key = random_number;
+        
         insert_user(&head, *connected_user);
         set_ip(&head, *connected_user, client_ip);
         set_user_online(&head, *connected_user);
-        format_message(output, "LIST_USER", "SIGNUP_SUCCESS", "0", connected_user->username, "NULL", "NULL");
-        write(connected_user->socket,output,strlen(output));
+        
+        sprintf(buffer_random, "%d", random_number);
+        
+        strcpy(user_and_session, connected_user->username);
+        strcat(user_and_session, ":");
+        strcat(user_and_session, buffer_random);
+        
+        format_message(output, "LIST_USER", "SIGNUP_SUCCESS", "0", user_and_session, "NULL", "NULL");
+        send_data(connected_user->socket, output);
         
         broadcast_user_availability(&head, connected_user->username, "ONLINE");
         printf("%s is connected with ip = %s\n", connected_user->username, connected_user->ip);
@@ -353,7 +420,7 @@ void signup(client_data *connected_user, char client_ip[MAX_IP], char username[M
     else
     {
         format_message(output, "SIGNUP", "SIGNUP_FAILED", "0", "0", "NULL", "NULL");
-        write(connected_user->socket,output,strlen(output));
+        send_data(connected_user->socket, output);
         
         memset(&output[0], 0, sizeof(output));
     }
@@ -364,6 +431,7 @@ void login(client_data *connected_user, char client_ip[MAX_IP], char username[MA
 {
     char output[MAX_BUFFER] = "",
          input[MAX_BUFFER] = "",
+         user_and_session[MAX_BUFFER] = "",
          buffer_protocol[6][MAX_BUFFER];
     
     strcpy(connected_user->username, username);
@@ -372,20 +440,38 @@ void login(client_data *connected_user, char client_ip[MAX_IP], char username[MA
     //Autentikasi
     if(user_authentication(&head, *connected_user) == true)
     {
-        format_message(output, "LIST_USER", "LOGIN_SUCCESS", "0", connected_user->username, "NULL", "NULL");
-        write(connected_user->socket,output,strlen(output));
+        //session key give
+        int random_number = rand();
+        char buffer_random[MAX_BUFFER] = "";
+        
+        while (is_session_exist(&head, random_number))
+        {
+            random_number = rand();
+        }
+        
+        connected_user->session_key = random_number;
         
         set_user_online(&head, *connected_user);
         set_ip(&head, *connected_user, client_ip);
         
+        sprintf(buffer_random, "%d", random_number);
+        
+        strcpy(user_and_session, connected_user->username);
+        strcat(user_and_session, ":");
+        strcat(user_and_session, buffer_random);
+        
+        format_message(output, "LIST_USER", "LOGIN_SUCCESS", "0", user_and_session, "NULL", "NULL");
+        send_data(connected_user->socket, output);
+        
         printf("%s is connected with ip = %s\n", connected_user->username, connected_user->ip);
         broadcast_user_availability(&head, connected_user->username, "ONLINE");
         memset(&output[0], 0, sizeof(output));
+        memset(&user_and_session[0], 0, sizeof(user_and_session));
     }
     else
     {
         format_message(output, "LOGIN", "LOGIN_FAILED", "0", "0", "NULL", "NULL");
-        write(connected_user->socket,output,strlen(output));
+        send_data(connected_user->socket, output);
         
         memset(&output[0], 0, sizeof(output));
     }
@@ -415,13 +501,13 @@ void inchat(client_data *connected_user, char client_ip[MAX_IP], char SIGNAL[MAX
     
     format_message(output, "INCHAT", "SEND_RECEIVE", receiver, sender, "MESSAGE", content);
     printf("content : %s\n", content);
-    write(receiver_socket , output , strlen(output));
+    send_data(receiver_socket, output);
     puts(client_message);
     memset(&client_message[0], 0, sizeof(client_message));
     memset(&output[0], 0, sizeof(output));
     
     format_message(output, "INCHAT", "SEND_MESSAGE_OK", "0", sender, "NULL", "NULL");
-    write(connected_user->socket , output , strlen(output));
+    send_data(connected_user->socket , output);
     
     memset(&output[0], 0, sizeof(output));
 }
@@ -432,7 +518,7 @@ void logout(client_data *connected_user)
     char output[MAX_BUFFER] = "";
     set_user_offline(&head, *connected_user);
     format_message(output, "LOGOUT", "LOGOUT_SUCCESS", "0", connected_user->username, "NULL", "NULL");
-    write(connected_user->socket , output , strlen(output));
+    send_data(connected_user->socket , output);
 }
 
 //fungsi handler menggunakan thread
@@ -444,12 +530,14 @@ void *user_handler(void *arguments)
     input[MAX_BUFFER] = "",
     username[MAX_USERNAME] = "",
     password[MAX_PASSWORD] = "",
+    username_in_session[MAX_BUFFER] = "",
+    session_key_temp[MAX_BUFFER] = "",
     buffer_protocol[6][MAX_BUFFER];
     int read_size;
     int error = 0;
     client_data connected_user;
     connected_user.socket = user->client_socket;
-    while( (read_size = recv(connected_user.socket , input , MAX_BUFFER , 0)) > 0)
+    while( (read_size = read_data(connected_user.socket , input)) > 0)
     {
         strip_message(buffer_protocol,input);
         printf("%s\n", buffer_protocol[0]);
@@ -483,24 +571,84 @@ void *user_handler(void *arguments)
             else
                 if(strcmp(buffer_protocol[0], "LIST_USER") == 0)
                 {
-                    list_user(&connected_user, user->client_ip, buffer_protocol[3]);
+                    char *temp_sender;
+                    temp_sender = strtok (buffer_protocol[3], ":");
+                    strcpy(username_in_session, temp_sender);
+                    while (temp_sender != NULL)
+                    {
+                        temp_sender = strtok (NULL, ":");
+                        strcpy(session_key_temp, temp_sender);
+                        break;
+                    }
+                    
+                    if(check_session(&head, &connected_user, atoi(session_key_temp)))
+                    {
+                        list_user(&connected_user, user->client_ip, username_in_session);
+                    }
+                    else
+                    {
+                        printf("Intruder Detected!!!");
+                        char error_message[MAX_BUFFER] = "";
+                        format_message(error_message, "HOME", "ERROR", "0", "0", "NULL", "NULL");
+                        send_data(connected_user.socket,error_message);
+                    }
                 }
                 else
                     if(strcmp(buffer_protocol[0], "INCHAT") == 0)
                     {
-                        inchat(&connected_user, user->client_ip, buffer_protocol[1], buffer_protocol[2], buffer_protocol[3], buffer_protocol[4], buffer_protocol[5] );
+                        char *temp_sender;
+                        temp_sender = strtok (buffer_protocol[3], ":");
+                        strcpy(username_in_session, temp_sender);
+                        while (temp_sender != NULL)
+                        {
+                            temp_sender = strtok (NULL, ":");
+                            strcpy(session_key_temp, temp_sender);
+                            break;
+                        }
+                        
+                        if(check_session(&head, &connected_user, atoi(session_key_temp)))
+                        {
+                            inchat(&connected_user, user->client_ip, buffer_protocol[1], buffer_protocol[2], username_in_session, buffer_protocol[4], buffer_protocol[5] );
+                        }
+                        else
+                        {
+                            printf("Intruder Detected!!!");
+                            char error_message[MAX_BUFFER] = "";
+                            format_message(error_message, "HOME", "ERROR", "0", "0", "NULL", "NULL");
+                            send_data(connected_user.socket,error_message);
+                        }
                     }
                     else
                         if(strcmp(buffer_protocol[0], "LOGOUT") == 0)
                         {
-                            logout(&connected_user);
-                            break;
+                            char *temp_sender;
+                            temp_sender = strtok (buffer_protocol[3], ":");
+                            strcpy(username_in_session, temp_sender);
+                            while (temp_sender != NULL)
+                            {
+                                temp_sender = strtok (NULL, ":");
+                                strcpy(session_key_temp, temp_sender);
+                                break;
+                            }
+                            
+                            if(check_session(&head, &connected_user, atoi(session_key_temp)))
+                            {
+                                logout(&connected_user);
+                                break;
+                            }
+                            else
+                            {
+                                printf("Intruder Detected!!!");
+                                char error_message[MAX_BUFFER] = "";
+                                format_message(error_message, "HOME", "ERROR", "0", "0", "NULL", "NULL");
+                                send_data(connected_user.socket,error_message);
+                            }
                         }
                         else
                         {
                             char error_message[MAX_BUFFER] = "";
                             format_message(error_message, "HOME", "ERROR", "0", "0", "NULL", "NULL");
-                            write(connected_user.socket,error_message,strlen(error_message));
+                            send_data(connected_user.socket,error_message);
                             //error = 1;
                         }
         show_online_users(&head);
@@ -511,8 +659,12 @@ void *user_handler(void *arguments)
     if(read_size == 0)
     {
         puts("Client disconnected");
-        set_user_offline(&head, connected_user);
-        broadcast_user_availability(&head, connected_user.username, "OFFLINE");
+        //printf("%s\n", connected_user.username);
+        if(strlen(connected_user.username) > 0)
+        {
+            set_user_offline(&head, connected_user);
+            broadcast_user_availability(&head, connected_user.username, "OFFLINE");
+        }
         fflush(stdout);
     }
     else if(read_size == -1)
@@ -553,7 +705,7 @@ int main(int argc , char *argv[])
     //client_database[0].online=0;
     //client_database[0].user_number=0;
     strcpy(user2.username,"feeljay");
-    strcpy(user2.password,"feels");
+    strcpy(user2.password,"feeels");
     insert_user(&head, user2);
     set_user_offline(&head, user2);
     //client_database[1].busy=0;

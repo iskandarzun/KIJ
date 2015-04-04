@@ -6,7 +6,13 @@ MenuWindow::MenuWindow(QWidget *parent) :
     ui(new Ui::MenuWindow)
 {
     ui->setupUi(this);
-    this->socket = new QTcpSocket(this);
+
+    this->myData = new ClientData();
+
+    this->myConnection = new Connection();
+    this->myConnection->setPort(8888);
+
+    this->initMessage();
     ui->stackedWidget->setCurrentWidget(ui->connectWindow);
     this->connect_slots();
 }
@@ -19,14 +25,18 @@ MenuWindow::~MenuWindow()
 //slots mapper
 void MenuWindow::connect_slots()
 {
+    QKeySequence ks(Qt::Key_Enter); // btw, this is numpad enter
+
+    QShortcut *pressEnter = new QShortcut(ks, ui->chatMessage);
+
     //set connection
-    connect(ui->serverAddress, SIGNAL(textChanged(QString)), this, SLOT(setServerAddress(QString)));
-    connect(ui->usernameLogin, SIGNAL(textChanged(QString)), this, SLOT(setUsername(QString)));
-    connect(ui->passwordLogin, SIGNAL(textChanged(QString)), this, SLOT(setPassword(QString)));
-    connect(ui->usernameSignup, SIGNAL(textChanged(QString)), this, SLOT(setUsername(QString)));
-    connect(ui->passwordSignup, SIGNAL(textChanged(QString)), this, SLOT(setPassword(QString)));
-    connect(ui->confirmPasswordSignup, SIGNAL(textChanged(QString)), this, SLOT(setConfirmPassword(QString)));
-    connect(ui->listUserWidget, SIGNAL(currentRowChanged(int)), this, SLOT(setChatFriend(int)));
+    connect(ui->serverAddress, SIGNAL(textChanged(QString)), this->myConnection, SLOT(setServerAddress(QString)));
+    connect(ui->usernameLogin, SIGNAL(textChanged(QString)), this->myData, SLOT(setUsername(QString)));
+    connect(ui->passwordLogin, SIGNAL(textChanged(QString)), this->myData, SLOT(setPassword(QString)));
+    connect(ui->usernameSignup, SIGNAL(textChanged(QString)), this->myData, SLOT(setUsername(QString)));
+    connect(ui->passwordSignup, SIGNAL(textChanged(QString)), this->myData, SLOT(setPassword(QString)));
+    connect(ui->confirmPasswordSignup, SIGNAL(textChanged(QString)), this->myData, SLOT(setConfirmPassword(QString)));
+    connect(ui->listUserWidget, SIGNAL(currentRowChanged(int)), this->myData, SLOT(setChatFriend(int)));
 
     //system function connection
     connect(ui->chooseSignupButton, SIGNAL(clicked()), this, SLOT(goToSignup()));
@@ -37,164 +47,183 @@ void MenuWindow::connect_slots()
     connect(ui->loginButton, SIGNAL(clicked()), this, SLOT(checkLogin()));
     connect(ui->sendButton, SIGNAL(clicked()), this, SLOT(sendMessage()));
     connect(ui->logoutButton, SIGNAL(clicked()), this, SLOT(logout()));
-    connect(this->socket, SIGNAL(readyRead()), this, SLOT(standByRead()));
-}
-
-//set function
-void MenuWindow::setServerAddress(QString address)
-{
-    this->serverAddress = address;
-}
-
-void MenuWindow::setUsername(QString username)
-{
-    this->username = username;
-}
-
-void MenuWindow::setPassword(QString password)
-{
-    this->password = password;
-}
-
-void MenuWindow::setConfirmPassword(QString confirmPassword)
-{
-    this->confirmPassword = confirmPassword;
-}
-
-void MenuWindow::setLoggedUser(QString user)
-{
-    this->loggedUser = user;
-}
-
-void MenuWindow::setChatFriend(int index)
-{
-    if(this->onlineUsers.count() > 0)
-    {
-        this->chatFriend = this->onlineUsers[index];
-    }
-    //qDebug("chatfriend di pilih = %s, index = %d", this->onlineUsers[index].toStdString().c_str(), index);
-}
-
-//get function
-QString MenuWindow::getServerAdress()
-{
-    return this->serverAddress;
-}
-
-QString MenuWindow::getUsername()
-{
-    return this->username;
-}
-
-QString MenuWindow::getPassword()
-{
-    return this->password;
-}
-
-QString MenuWindow::getConfirmPassword()
-{
-    return this->confirmPassword;
-}
-
-QString MenuWindow::getLoggedUser()
-{
-    return this->loggedUser;
-}
-
-QString MenuWindow::getChatFriend()
-{
-    return this->chatFriend;
+    connect(this->myConnection, SIGNAL(incomingData()), this, SLOT(standByRead()));
+    connect(pressEnter, SIGNAL(activated()), this, SLOT(sendMessage()));
 }
 
 //system function
 void MenuWindow::goToSignup()
 {
-    this->socket->connectToHost(this->serverAddress, 8888);
+    this->clearMessage();
+    this->myConnection->ConnectingToServer();
     //qDebug("%d", (int)this->socket->error());
-    if(this->socket->waitForConnected(WAIT_TIME))
+    if(this->myConnection->isConnectedToServer())
     {
+        this->clearMessage();
         ui->stackedWidget->setCurrentWidget(ui->signupWindow);
+    }
+    else
+    {
+        ui->serverError->setText("Koneksi ke server gagal");
+        ui->serverError->show();
     }
 }
 
 void MenuWindow::goToLogin()
 {
-    this->socket->connectToHost(this->serverAddress, 8888);
+    this->clearMessage();
+    this->myConnection->ConnectingToServer();
     //qDebug("%d", (int)this->socket->error());
-    if(this->socket->waitForConnected(WAIT_TIME))
+    if(this->myConnection->isConnectedToServer())
     {
+        this->clearMessage();
         ui->stackedWidget->setCurrentWidget(ui->loginWindow);
+    }
+    else
+    {
+        ui->serverError->setText("Koneksi ke server gagal");
+        ui->serverError->show();
     }
 }
 
 void MenuWindow::checkSignup()
 {
-    this->socket->write(this->getFormatMessage("SIGNUP", "AUTH_REQ", "0", "0", "AUTH", this->username+":"+this->password).toUtf8());
-    this->socket->waitForReadyRead(WAIT_TIME);
-    QString received_message = QString::fromUtf8(this->socket->read(MAX_BUFFER).trimmed());
+    QRegExp checker("(\\:|\\\\|\\/)");
+    QStringList temp = this->myData->getUsername().split(checker);
+    //qDebug("%d", temp.size());
 
-    //qDebug("%s\n", received_message.toStdString().c_str());
-
-    QStringList temp_buffer = this->getBufferProtocol(received_message);
-    if(temp_buffer[1] == "SIGNUP_SUCCESS")
+    this->clearMessage();
+    if(temp.size() == 1 && this->myData->validateUsername()
+       && this->myData->validatePassword()
+       && this->myData->confirmingPassword())
     {
-        temp_buffer.clear();
-        received_message.clear();
+        this->myConnection->sendData("SIGNUP", "AUTH_REQ", "0", "0", "AUTH", this->myData->getUsername()+":"+this->myData->getPassword());
+        this->myConnection->waiting();
+        QString received_message = this->myConnection->readData();
 
-        this->setLoggedUser(this->username);
+        //qDebug("%s\n", received_message.toStdString().c_str());
 
-        this->socket->write(this->getFormatMessage("LIST_USER", "LIST_USER_REQ", "0", this->username, "NULL", "NULL").toUtf8());
-        this->socket->waitForReadyRead(WAIT_TIME);
-        received_message = QString::fromUtf8(this->socket->read(MAX_BUFFER).trimmed());
+        QStringList temp_buffer = this->getBufferProtocol(received_message);
+        if(temp_buffer[1] == "SIGNUP_SUCCESS")
+        {
+            QRegExp delimiters(":");
+            QStringList user_and_session = temp_buffer[3].split(delimiters);
+            if(user_and_session[1] != NULL)
+            {
+                this->myData->setSessionKey(user_and_session[1]);
+            }
 
-        temp_buffer = this->getBufferProtocol(received_message);
+            temp_buffer.clear();
+            received_message.clear();
 
-        setOnlineUsers(temp_buffer[5].trimmed());
+            this->myData->setLoggedUser();
 
-        ui->stackedWidget->setCurrentWidget(ui->ChatWindow);
+            this->myConnection->sendData("LIST_USER", "LIST_USER_REQ", "0", this->myData->getUsername()+":"+this->myData->getSessionKey(), "NULL", "NULL");
+            this->myConnection->waiting();
+            received_message = this->myConnection->readData();
+
+            temp_buffer = this->getBufferProtocol(received_message);
+
+            this->addUsers(temp_buffer[5].trimmed());
+
+            this->clearMessage();
+            ui->stackedWidget->setCurrentWidget(ui->ChatWindow);
+            ui->loggedUser->setText("Login sebagai : " + this->myData->getLoggedUser());
+        }
+        else
+        {
+            ui->userSignupError->setText("Username sudah dipakai");
+            ui->userSignupError->show();
+        }
+    }
+
+    if(!this->myData->validateUsername() || temp.size() > 1)
+    {
+        ui->userSignupError->setText("Gunakan angka atau huruf lebih dari 3 dan kurang dari 512 Karakter!");
+        ui->userSignupError->show();
+    }
+
+    if(!this->myData->validatePassword())
+    {
+        ui->passwordSignupError->setText("Password harus lebih dari 5 dan kurang dari 512 Karakter!");
+        ui->passwordSignupError->show();
+    }
+    else
+    if(!this->myData->confirmingPassword())
+    {
+        ui->passwordSignupError->setText("Password dan Konfirmasi password tidak sama!");
+        ui->passwordSignupError->show();
     }
 }
 
 void MenuWindow::checkLogin()
 {
-    this->socket->write(this->getFormatMessage("LOGIN", "AUTH_REQ", "0", "0", "AUTH", this->username+":"+this->password).toUtf8());
-    this->socket->waitForReadyRead(WAIT_TIME);
-    QString received_message = QString::fromUtf8(this->socket->read(MAX_BUFFER).trimmed());
+    QRegExp checker("(\\:|\\\\|\\/)");
+    QStringList temp = this->myData->getUsername().split(checker);
+    //qDebug("%d", temp.size());
 
-    //qDebug("%s\n", received_message.toStdString().c_str());
-
-
-    QStringList temp_buffer = this->getBufferProtocol(received_message);
-    if(temp_buffer[1] == "LOGIN_SUCCESS")
+    this->clearMessage();
+    if(temp.size() == 1 && this->myData->validateUsername()
+            && this->myData->validatePassword())
     {
-        temp_buffer.clear();
-        received_message.clear();
+        this->myConnection->sendData("LOGIN", "AUTH_REQ", "0", "0", "AUTH", this->myData->getUsername()+":"+this->myData->getPassword());
+        this->myConnection->waiting();
+        QString received_message = this->myConnection->readData();
 
-        this->setLoggedUser(this->username);
+        //qDebug("%s\n", received_message.toStdString().c_str());
 
-        this->socket->write(this->getFormatMessage("LIST_USER", "LIST_USER_REQ", "0", this->username, "NULL", "NULL").toUtf8());
-        this->socket->waitForReadyRead(WAIT_TIME);
-        received_message = QString::fromUtf8(this->socket->read(MAX_BUFFER).trimmed());
 
-        temp_buffer = this->getBufferProtocol(received_message);
+        QStringList temp_buffer = this->getBufferProtocol(received_message);
+        if(temp_buffer[1] == "LOGIN_SUCCESS")
+        {
+            QRegExp delimiters(":");
+            QStringList user_and_session = temp_buffer[3].split(delimiters);
+            if(user_and_session[1] != NULL)
+            {
+                this->myData->setSessionKey(user_and_session[1]);
+            }
+            temp_buffer.clear();
+            received_message.clear();
 
-        setOnlineUsers(temp_buffer[5].trimmed());
+            this->myData->setLoggedUser();
 
-        ui->stackedWidget->setCurrentWidget(ui->ChatWindow);
+            this->myConnection->sendData("LIST_USER", "LIST_USER_REQ", "0", this->myData->getUsername()+":"+this->myData->getSessionKey(), "NULL", "NULL");
+            this->myConnection->waiting();
+            received_message = this->myConnection->readData();
+
+            temp_buffer = this->getBufferProtocol(received_message);
+
+            addUsers(temp_buffer[5].trimmed());
+
+            this->clearMessage();
+            ui->stackedWidget->setCurrentWidget(ui->ChatWindow);
+            ui->loggedUser->setText("Login sebagai : " + this->myData->getLoggedUser());
+        }
+        else
+        {
+            ui->userLoginError->setText("Login Gagal! Coba Cek input");
+            ui->userLoginError->show();
+        }
+    }
+
+    if(!this->myData->validateUsername() || temp.size() > 1)
+    {
+        ui->userLoginError->setText("Gunakan angka atau huruf lebih dari 3 dan kurang dari 512 Karakter!");
+        ui->userLoginError->show();
+    }
+
+    if(!this->myData->validatePassword())
+    {
+        ui->passwordLoginError->setText("Password harus lebih dari 5 dan kurang dari 512 Karakter!");
+        ui->passwordLoginError->show();
     }
 }
 
 void MenuWindow::backToMenu()
 {
-    this->socket->disconnectFromHost();
+    this->clearMessage();
+    this->myConnection->disconnecting();
     ui->stackedWidget->setCurrentWidget(ui->connectWindow);
-}
-
-QString MenuWindow::getFormatMessage(QString state, QString flag, QString receiver, QString sender, QString type, QString content)
-{
-    QString output;
-    output += state + "\r\n" + flag + "\r\n" + receiver + "\r\n" + sender + "\r\n" + type + "\r\n" + content;
-    return output;
 }
 
 QStringList MenuWindow::getBufferProtocol(QString message)
@@ -204,14 +233,13 @@ QStringList MenuWindow::getBufferProtocol(QString message)
     return buffer_protocol;
 }
 
-void MenuWindow::setOnlineUsers(QString list_user)
+void MenuWindow::addUsers(QString list_user)
 {
     QRegExp delimiter(":");
     QStringList all_list = list_user.split(delimiter);
     all_list.pop_back();
-    all_list.removeOne(this->username);
-    this->onlineUsers.clear();
-    this->onlineUsers = all_list;
+    all_list.removeOne(this->myData->getUsername());
+    this->myData->setOnlineUsers(all_list);
 
     //ui->listUserWidget->takeItem(0);
 
@@ -221,64 +249,83 @@ void MenuWindow::setOnlineUsers(QString list_user)
     int index;
 
 
-    for (index = 0; index < this->onlineUsers.count(); index++)
+    for (index = 0; index < this->myData->usersCount(); index++)
     {
         tempname.clear();
         //qDebug("index ke : %d, jumlah user = %d\n", index, this->onlineUsers.count());
-        if(this->onlineUsers.at(index) != NULL)
+        if(this->myData->userAtIndex(index) != NULL)
         {
-            tempname = this->onlineUsers.at(index);
+            tempname = this->myData->userAtIndex(index);
             users = new QListWidgetItem(tempname, 0, index);
             ui->listUserWidget->addItem(users);
         }
     }
+    ui->listUserWidget->setCurrentRow(0);
 
-    //qDebug("DISINI jumlah online = %d\n", this->onlineUsers.count() /*this->onlineUsers[index].toStdString().c_str()*/);
+    qDebug("DISINI jumlah online = %d\n", this->myData->usersCount() /*this->onlineUsers[index].toStdString().c_str()*/);
 }
 
 void MenuWindow::setListUserOnline(QString user)
 {
-    this->onlineUsers.push_back(user);
-    int index = this->onlineUsers.count();
+    this->myData->addNewUser(user);
+    int index = this->myData->usersCount();
 
-    //qDebug("DISINI jumlah %d\n", index /*this->onlineUsers[index].toStdString().c_str()*/);
+    qDebug("DISINI jumlah %d\n", index /*this->onlineUsers[index].toStdString().c_str()*/);
     QListWidgetItem *newuser = NULL;
 
     newuser = new QListWidgetItem(user, 0, index);
     ui->listUserWidget->addItem(newuser);
+    if(index == 1)
+    {
+        ui->listUserWidget->setCurrentRow(0);
+    }
 }
 
 void MenuWindow::setListUserOffline(QString user)
 {
     int index;
 
-    for(index = 0; index < this->onlineUsers.size(); index++)
+    for(index = 0; index < this->myData->usersCount(); index++)
     {
-        if(this->onlineUsers[index] == user)
+        if(this->myData->userAtIndex(index) == user)
         {
             break;
         }
     }
 
-    this->onlineUsers.removeAt(index);
+    if(this->myData->usersCount() > 1)
+    {
+        ui->listUserWidget->takeItem(index);
 
-    ui->listUserWidget->takeItem(index);
+        this->myData->removeUser(index);
+    }
+    else
+    {
+        this->myData->removeUser(index);
+
+        ui->listUserWidget->takeItem(index);
+    }
+
+    qDebug("DISINI jumlah %d\n", this->myData->usersCount() /*this->onlineUsers[index].toStdString().c_str()*/);
+
 }
 
 void MenuWindow::sendMessage()
 {
-    this->socket->write(this->getFormatMessage("INCHAT", "SEND_MESSAGE", this->getChatFriend(), this->getLoggedUser(), "MESSAGE", ui->chatMessage->text()).toUtf8());
-    ui->chatTextEdit->append("From <b>You</b> to <b>" + this->chatFriend + "</b>: " + ui->chatMessage->text());
-    ui->chatMessage->clear();
-    ui->chatMessage->setFocus();
+    if(this->myData->getChatFriend() != NULL)
+    {
+        this->myConnection->sendData("INCHAT", "SEND_MESSAGE", this->myData->getChatFriend(), this->myData->getLoggedUser()+":"+this->myData->getSessionKey(), "MESSAGE", ui->chatMessage->text());
+        ui->chatTextEdit->append("From <b>You</b> to <b>" + this->myData->getChatFriend() + "</b>: " + ui->chatMessage->text());
+        ui->chatMessage->clear();
+        ui->chatMessage->setFocus();
+    }
 }
 
 void MenuWindow::standByRead()
 {
-
     if(ui->stackedWidget->currentWidget() == ui->ChatWindow)
     {
-        QString received_message = QString::fromUtf8(this->socket->read(MAX_BUFFER).trimmed());
+        QString received_message = this->myConnection->readData();
         QStringList temp_buffer = this->getBufferProtocol(received_message);
 
         if(temp_buffer[1] == "LIST_USER_SEND_ONLINE")
@@ -317,9 +364,48 @@ void MenuWindow::standByRead()
 
 void MenuWindow::logout()
 {
-    this->socket->disconnectFromHost();
+    this->myConnection->disconnecting();
     ui->stackedWidget->setCurrentWidget(ui->connectWindow);
-    this->onlineUsers.clear();
-    ui->listUserWidget->clear();
+
+    //attributes clear
+    this->myData->clearData();
+
+    //ui clear
     ui->chatTextEdit->clear();
+    ui->usernameLogin->clear();
+    ui->usernameSignup->clear();
+    ui->passwordLogin->clear();
+    ui->passwordSignup->clear();
+    ui->confirmPasswordSignup->clear();
+    if(this->myData->usersCount() <= 0)
+    {
+        ui->listUserWidget->clear();
+    }
+}
+
+void MenuWindow::initMessage()
+{
+    ui->serverError->hide();
+    ui->serverError->setStyleSheet("QLabel { color : red; }");
+
+    ui->userLoginError->hide();
+    ui->userLoginError->setStyleSheet("QLabel { color : red; font-size : 10pt; }");
+
+    ui->userSignupError->hide();
+    ui->userSignupError->setStyleSheet("QLabel { color : red; font-size : 10pt; }");
+
+    ui->passwordLoginError->hide();
+    ui->passwordLoginError->setStyleSheet("QLabel { color : red; font-size : 10pt; }");
+
+    ui->passwordSignupError->hide();
+    ui->passwordSignupError->setStyleSheet("QLabel { color : red; font-size : 10pt; }");
+}
+
+void MenuWindow::clearMessage()
+{
+    ui->serverError->hide();
+    ui->userLoginError->hide();
+    ui->userSignupError->hide();
+    ui->passwordLoginError->hide();
+    ui->passwordSignupError->hide();
 }
