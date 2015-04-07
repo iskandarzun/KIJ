@@ -370,7 +370,8 @@ void strip_message(char output[6][MAX_BUFFER], char buffer[MAX_BUFFER])
 //fungsi free buffer
 void clear_buffer_protocol(char buffer_protocol[6][MAX_BUFFER])
 {
-    for(int counter = 0; counter <= 5; counter++)
+    int counter;
+	for(counter = 0; counter <= 5; counter++)
     {
         memset(&buffer_protocol[counter][0], 0, sizeof(buffer_protocol[counter]));
     }
@@ -774,5 +775,5 @@ int main(int argc , char *argv[])
             printf("thread has been created!\n");
         }
     }
-    return pthread_join(tid, NULL);
+    return pthread_join(tid, NULL);	
 }
