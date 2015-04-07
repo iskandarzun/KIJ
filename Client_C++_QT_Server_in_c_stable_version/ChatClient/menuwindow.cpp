@@ -25,10 +25,6 @@ MenuWindow::~MenuWindow()
 //slots mapper
 void MenuWindow::connect_slots()
 {
-    QKeySequence ks(Qt::Key_Enter); // btw, this is numpad enter
-
-    QShortcut *pressEnter = new QShortcut(ks, ui->chatMessage);
-
     //set connection
     connect(ui->serverAddress, SIGNAL(textChanged(QString)), this->myConnection, SLOT(setServerAddress(QString)));
     connect(ui->usernameLogin, SIGNAL(textChanged(QString)), this->myData, SLOT(setUsername(QString)));
@@ -48,7 +44,7 @@ void MenuWindow::connect_slots()
     connect(ui->sendButton, SIGNAL(clicked()), this, SLOT(sendMessage()));
     connect(ui->logoutButton, SIGNAL(clicked()), this, SLOT(logout()));
     connect(this->myConnection, SIGNAL(incomingData()), this, SLOT(standByRead()));
-    connect(pressEnter, SIGNAL(activated()), this, SLOT(sendMessage()));
+    connect(ui->chatMessage, SIGNAL(returnPressed()), this, SLOT(sendMessage()));
 }
 
 //system function
