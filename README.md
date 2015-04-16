@@ -73,8 +73,8 @@ Daftar hal yang harus dikerjakan saat ini, antara lain:
 - [x] Uji coba 1 (enkripsi seluruh pesan)
 - [ ] Implementasi enkripsi isi pesan antara Client - Client
 - [ ] Uji coba 2 (enkripsi isi pesan private)
-- [ ] Implementasi Distribute key dengan diffie-helman
-- [ ] Uji coba 3 (Key Exchange)
+- [ ] Implementasi Distribute key dengan diffie-helman dan pseudorandom generator key + IV
+- [ ] Uji coba 3 (Key Exchange dan pseudorandom generator)
 - [ ] Implementasi hash untuk password (optional)
 - [ ] Implementasi hash dari pesan untuk autentikasi (optional)   
 - [ ] Uji coba 4 (hash)
