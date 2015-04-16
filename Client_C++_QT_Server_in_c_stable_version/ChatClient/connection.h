@@ -10,8 +10,8 @@
 #define MAX_STRING 4096
 #define WAIT_TIME 3000 //in miliseconds
 #define Nb 4
-#define MAX_DIVIDE MAX_BUFFER / 32
-#define MAX_BUFF_DIVIDE MAX_STRING / 16
+#define MAX_BUFF_DIVIDE MAX_BUFFER / 32
+#define MAX_DIVIDE MAX_STRING / 16
 
 // xtime is a macro that finds the product of {02} and the argument to xtime modulo {1b}
 #define xtime(x)   ((x<<1) ^ (((x>>7) & 1) * 0x1b))

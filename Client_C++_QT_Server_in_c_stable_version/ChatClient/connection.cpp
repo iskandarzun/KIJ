@@ -51,11 +51,11 @@ QString Connection::readData()
 {
     //testing
     QString temp = QString::fromUtf8(this->socket->read(MAX_BUFFER).trimmed());
-    qDebug("encrypted message -> %s", temp.toStdString().c_str());
+    qDebug("encrypted client message -> %s", temp.toStdString().c_str());
 
     //decrypt here
     QString decrypted_message = AES_Decrpyt(temp);
-    qDebug("decrypted message -> %s", decrypted_message.toStdString().c_str());
+    qDebug("decrypted client message -> %s", decrypted_message.toStdString().c_str());
     return decrypted_message;
 }
 
@@ -95,7 +95,7 @@ QString Connection::getFormatMessage(QString state, QString flag, QString receiv
 //AES function
 QString Connection::AES_Encrypt(QString message)
 {
-    char convert[MAX_BUFFER] = "";
+    char convert[MAX_BUFFER];
     char result[MAX_BUFFER][33];
     int b, i, blocksIV, blocksAscii;
 
@@ -179,6 +179,7 @@ QString Connection::AES_Encrypt(QString message)
 
             memset(&convert[0], 0, sizeof(convert));
             strcat(convert, tempconvert);
+            memset(&tempconvert[0], 0, sizeof(tempconvert));
 
             memset(&this->in[0], 0, sizeof(this->in));
             memset(&this->out[0], 0, sizeof(this->out));
@@ -190,20 +191,23 @@ QString Connection::AES_Encrypt(QString message)
 
         memset(&convSelected[0], 0, sizeof(convSelected));
         strncpy(convSelected, convert, strlen(partAscii[ba])*2);
+        memset(&plainInHex[0], 0, sizeof(plainInHex));
         char2hex(partAscii[ba], plainInHex);
         xor_str(plainInHex, convSelected, xorResult);
 
         strcpy(hasilxorencrypt[ba], xorResult);
         qDebug("PartAscii dengan panjang %lu -> %s\n", strlen(partAscii[ba]), partAscii[ba]);
+        qDebug("plainInHex dengan panjang %lu -> %s\n", strlen(plainInHex), plainInHex);
         qDebug("panjang convertSelected %lu -> %s\n", strlen(convSelected), convSelected);
         qDebug("hasil xor ke %d -> %s\n", ba, hasilxorencrypt[ba]);
         strcpy(result[ba], hasilxorencrypt[ba]);
+        memset(&hasilxorencrypt[ba][0], 0, sizeof(hasilxorencrypt[ba]));
 
         char tempConvResult[MAX_BUFFER];
+        memset(&tempConvResult[0], 0, sizeof(tempConvResult));
         convertToReal(tempConvResult, convSelected);
         memset(&convert[0], 0, sizeof(convert));
         strcpy(convert, tempConvResult);
-        memset(&plainInHex[0], 0, sizeof(plainInHex));
         memset(&xorResult[0], 0, sizeof(xorResult));
     }
 
@@ -217,13 +221,18 @@ QString Connection::AES_Encrypt(QString message)
         memset(&result[i][0], 0, sizeof(result[i]));
     }
 
+    for(i = 0; i < 4; i++)
+    {
+        memset(&this->state[i][0], 0, sizeof(this->state[i]));
+    }
+
     return encrypted_message;
 }
 
 QString Connection::AES_Decrpyt(QString message)
 {
-    char convert[MAX_BUFFER] = "";
-    char coba[MAX_STRING][17];
+    char convert[MAX_BUFFER];
+    char coba[MAX_DIVIDE][17];
     int b, i, blocksIV, blocksHexa;
 
     //AES mode (128, 192, 256) :
@@ -247,7 +256,7 @@ QString Connection::AES_Decrpyt(QString message)
     blocksHexa = ((message.length() - 1) / 32);
 
     //dipisah 16 byte
-    char partHexa[MAX_BUFFER][33];
+    char partHexa[MAX_BUFF_DIVIDE][33];
     QByteArray array = message.toLocal8Bit();
     char* buffer = array.data();
     divideHexa(partHexa, buffer);
@@ -308,7 +317,7 @@ QString Connection::AES_Decrpyt(QString message)
             strcat(convert, tempconvert);
 
             memset(&this->in[0], 0, sizeof(this->in));
-            memset(&this->out[0], 0, sizeof(this->out));
+            memset(&this->out[0], 0, sizeof(this->out));            
         }
 
         char tempRes[MAX_BUFFER];
@@ -324,20 +333,29 @@ QString Connection::AES_Decrpyt(QString message)
         qDebug("hasil xor ke %d -> %s\n", ba, hasilxordecrypt[ba]);
 
         char tempConvResult[MAX_BUFFER];
+        memset(&tempConvResult[0], 0, sizeof(tempConvResult));
         convertToReal(tempConvResult, convSelected2);
         memset(&convert[0], 0, sizeof(convert));
         strcpy(convert, tempConvResult);
         memset(&tempRes[0], 0, sizeof(tempRes));
 
+        memset(&coba[ba][0], 0, sizeof(coba[ba]));
         convertToReal(coba[ba], hasilxordecrypt[ba]);
     }
 
     QString decrypted_message;
+    decrypted_message.clear();
     for(i = 0; i <= blocksHexa; i++)
     {
         decrypted_message.push_back(QString::fromUtf8(coba[i]));
         memset(&coba[i][0], 0, sizeof(coba[i]));
     }
+
+    for(i = 0; i < 4; i++)
+    {
+        memset(&this->state[i][0], 0, sizeof(this->state[i]));
+    }
+
     return decrypted_message;
 }
 
@@ -606,6 +624,9 @@ void Connection::convertToReal(char *dest, char *source)
 {
     int i;
     int count = 0;
+
+    memset(&dest[0], 0, sizeof(dest));
+
     for(i = 0; i < (int)strlen(source)/2; i++)
     {
         if(source[count] == '0' && source[count+1] == '0')

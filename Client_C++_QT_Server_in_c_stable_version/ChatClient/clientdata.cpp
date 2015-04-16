@@ -95,6 +95,8 @@ void ClientData::clearData()
     this->password.clear();
     this->confirmPassword.clear();
     this->loggedUser.clear();
+    this->sessionKey.clear();
+    this->chatFriend.clear();
 }
 
 void ClientData::addNewUser(QString newUser)
