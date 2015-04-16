@@ -12,7 +12,8 @@
 #include <pthread.h>
 #include <time.h>
 
-#define MAX_BUFFER 4096
+#define MAX_BUFFER 8192
+#define MAX_STRING 4096
 #define MAX_IP 20
 #define MAX_USERNAME 1024
 #define MAX_PASSWORD 1024
@@ -46,7 +47,8 @@ int user_count = 0; //belum diimplementasi
 ****** Enkripsi AES + OFB *****
 *******************************/
 #define Nb 4
-#define MAX_DIVIDE MAX_BUFFER / 16
+#define MAX_BUFF_DIVIDE MAX_BUFFER / 32
+#define MAX_DIVIDE MAX_STRING / 16
 
 // Round dalam AES, Inisialisasi = 0
 int Nr=0;
@@ -289,11 +291,6 @@ void Cipher(unsigned char RoundKey[240], unsigned char in[16], unsigned char out
     }
 }
 
-
-/******************************
- ********* End of AES *********
- ******************************/
-
 // Fungsi ubah hex->digit
 char hexDigit(unsigned n)
 {
@@ -370,24 +367,34 @@ void char2hex(char* A, char *Hex) {
     int i=0;
     int j=0;
     int t;
-    while(A[i]!=0) {
+    char temp[32];
+    
+    while(A[i] != '\0') {
+        
+        //printf("%d %lu\n", i, strlen(A));
+        
         t = A[i] >> 4;
         if (t < 10) {
-            Hex[j] = '0' + t;
+            temp[j] = '0' + t;
         }
         else {
-            Hex[j] = 'a' + t - 10;
+            temp[j] = 'a' + t - 10;
         }
         j++;
         t = A[i] % 16;
         if (t < 10) {
-            Hex[j] = '0' + t;
+            temp[j] = '0' + t;
         }
         else {
-            Hex[j] = 'a' + t - 10;
+            temp[j] = 'a' + t - 10;
         }
         j++;
         i++;
+    }
+    
+    for(i = 0; i < (int)strlen(A)*2; i++)
+    {
+        Hex[i] = temp[i];
     }
 }
 
@@ -437,28 +444,8 @@ char *xor(char *source1, int src_sz, char *source2) {
     return result;
 }
 
-// Fungsi ubah string char -> hex
-char* stringToHex(char* input, int size)
-{
-    static const char* const lut = "0123456789ABCDEF";
-    size_t len = size;
-    
-    char output[100];
-    int count = 0;
-    
-    for (size_t i = 0; i < len; ++i)
-    {
-        const unsigned char c = input[i];
-        output[count] = lut[c >> 4];
-        count++;
-        output[count] = lut[c & 15];
-        count++;
-    }
-    return output;
-}
-
 // Fungsi memisah menjadi 16 byte input
-void divideAscii(char dest[MAX_BUFFER][17], char *source)
+void divideAscii(char dest[MAX_DIVIDE][17], char *source)
 {
     int i, j, part;
     part = (strlen(source) - 1) / 16;
@@ -468,9 +455,9 @@ void divideAscii(char dest[MAX_BUFFER][17], char *source)
         memset(&dest[i][0], 0, sizeof(dest[i]));
         for(j = i * 16; j < ((i+1) * 16); j++)
         {
-            if(j > strlen(source))
+            if(j >= strlen(source))
             {
-                dest[i][16] = '\0';
+                dest[i][j] = '\0';
                 break;
             }
             dest[i][j%16] = source[j];
@@ -482,8 +469,7 @@ void divideAscii(char dest[MAX_BUFFER][17], char *source)
     //printf("%d\n", strlen(dest[0]));
 }
 
-//fungsi write data (encrypt here)
-void send_data(int socket, char output[MAX_BUFFER])
+void AES_Encrypt(char* input, char *output)
 {
     //Enkripsi
     
@@ -499,8 +485,7 @@ void send_data(int socket, char output[MAX_BUFFER])
     unsigned char Key[32];
     
     char convert[MAX_BUFFER] = "";
-    char deconvert[MAX_BUFFER] = "";
-    char real[MAX_BUFFER] = "";
+    char real[MAX_STRING] = "";
     int b, i, blocksIV, blocksAscii;
     
     //AES mode (128, 192, 256) :
@@ -510,8 +495,10 @@ void send_data(int socket, char output[MAX_BUFFER])
     Nk = AES_Mode / 32;
     Nr = Nk + 6;
     
-    //Initialization Vector
-    char IV[MAX_BUFFER] = "0123456789abcdef";
+    //Initialization Vector 16 byte
+    char IV[17] = "0123456789abcdef";
+    
+    printf("HALO SELESAI");
     
     //Key Enkripsi
     unsigned char tempkey[32] = {0x00  ,0x01  ,0x02  ,0x03  ,0x04  ,0x05  ,0x06  ,0x07  ,0x08  ,0x09  ,0x0a  ,0x0b  ,0x0c  ,0x0d  ,0x0e  ,0x0f};
@@ -521,14 +508,14 @@ void send_data(int socket, char output[MAX_BUFFER])
         Key[i]=tempkey[i];
     }
     
-    blocksAscii = ((strlen(output) - 1) / 16);
+    blocksAscii = ((strlen(input) - 1) / 16);
     
     //dipisah 16 byte
-    char partAscii[MAX_BUFFER][17];
-    divideAscii(partAscii, output);
+    char partAscii[MAX_DIVIDE][17];
+    divideAscii(partAscii, input);
     
-    char hasilxorencrypt[MAX_DIVIDE][33];
-    char hasilxordecrypt[MAX_DIVIDE][33];
+    char hasilxorencrypt[MAX_BUFF_DIVIDE][33];
+    char hasilxordecrypt[MAX_BUFF_DIVIDE][33];
     
     //Mulai enkripsi
     for (int ba = 0; ba <= blocksAscii; ba++)
@@ -545,7 +532,7 @@ void send_data(int socket, char output[MAX_BUFFER])
         
         for(b = 0; b <= blocksIV; b++)
         {
-            for(i=0;i<Nb*4;i++)
+            for(i = 0; i < Nb*4; i++)
             {
                 if(ba == 0)
                 {
@@ -608,68 +595,72 @@ void send_data(int socket, char output[MAX_BUFFER])
             memset(&out[0], 0, sizeof(out));
         }
         
-        
-        char plainInHex[MAX_BUFFER];
-        //char *templagi;
+        char plainInHex[33];
         char xorResult[MAX_BUFFER];
+        char convSelected[MAX_BUFFER];
         
-        /*
-         for(i = 0; i < strlen(partAscii[ba]); i++)
-         {
-         plainInHex[i] = (unsigned char) partAscii[ba][i];
-         }
-         
-         uncharToChar(templagi, plainInHex, sizeof(plainInHex));
-         strcat(convResult, templagi);
-         */
-        
-        /*
+        memset(&convSelected[0], 0, sizeof(convSelected));
+        strncpy(convSelected, convert, strlen(partAscii[ba])*2);
         char2hex(partAscii[ba], plainInHex);
-        xor_str(plainInHex, convert, xorResult);
-        */
-        //strcpy(convResult, stringToHex(partAscii[ba], strlen(partAscii[ba])));
+        xor_str(plainInHex, convSelected, xorResult);
         
-        //strcpy(hasilxorencrypt[ba], xorResult);
-        strcpy(hasilxorencrypt[ba], xor(partAscii[ba], strlen(partAscii[ba]), convert));
-        //printf("hasil konversi ke hex partAscii -> %s\n", convResult);
-        /*
-        printf("panjang partAscii -> %d\nkali 2 -> %d\n", strlen(partAscii[ba]), strlen(partAscii[ba])*2);
-        printf("panjang hasilxorencrypt -> %d\n", strlen(hasilxorencrypt[ba]));
-        printf("panjang convert -> %d\n", strlen(convert));
-        printf("hasil convert blok ke %d : ", ba);
-        puts(convert);
-        printf("hasil xor encryption : ");
-        puts(hasilxorencrypt[ba]);
-         */
+        strcpy(hasilxorencrypt[ba], xorResult);
+        
+        printf("blok ke : %d\n", ba);
+        printf("panjang convert %lu -> %s\n", strlen(convert), convert);
+        printf("partAscii -> %s\npanjang partAscii -> %lu\nkali 2 -> %lu\n", partAscii[ba], strlen(partAscii[ba]), strlen(partAscii[ba])*2);
+        printf("panjang hexaAscii %lu -> %s\n", strlen(plainInHex), plainInHex);
+        printf("panjang convertSelected %lu -> %s\n", strlen(convSelected), convSelected);
+        printf("panjang hasilxorencrypt %lu -> %s\n", strlen(hasilxorencrypt[ba]), hasilxorencrypt[ba]);
         
         char tempConvResult[MAX_BUFFER];
-        convertToReal(tempConvResult, convert);
+        convertToReal(tempConvResult, convSelected);
         memset(&convert[0], 0, sizeof(convert));
         strcpy(convert, tempConvResult);
-        //memset(&plainInHex[0], 0, sizeof(plainInHex));
-        //memset(&xorResult[0], 0, sizeof(xorResult));
+        memset(&plainInHex[0], 0, sizeof(plainInHex));
+        memset(&xorResult[0], 0, sizeof(xorResult));
     }
     
-    char encrypted_message[MAX_BUFFER] = "";
-    for(i = 0; i < blocksAscii; i++)
+    char encrypted_message[MAX_BUFFER];
+    memset(&encrypted_message[0], 0, sizeof(encrypted_message));
+    for(i = 0; i <= blocksAscii; i++)
     {
         strcat(encrypted_message, hasilxorencrypt[i]);
     }
-    //Selesai
-    printf("message -> %s\n", encrypted_message);
+    
+    strcpy(output, encrypted_message);
+}
+
+/******************************
+ ********* End of AES *********
+ ******************************/
+
+//fungsi write data (encrypt here)
+void send_data(int socket, char output[MAX_STRING])
+{
+    char encrypted_message[MAX_BUFFER];
+    
+    AES_Encrypt(output, encrypted_message);
+    
+    printf("pesan :\npanjang = %lu\nmessage -> %s\n", strlen(output), output);
+    
+    printf("enkripsi :\npanjang = %lu\nmessage -> %s\n", strlen(encrypted_message), encrypted_message);
+
     write(socket,encrypted_message,strlen(encrypted_message));
+    
+    memset(&encrypted_message[0], 0, sizeof(encrypted_message));
 }
 
 //fungsi read data (decrypt here)
-int read_data(int socket, char input[MAX_BUFFER])
+int read_data(int socket, char input[MAX_STRING])
 {
     int read_size;
-    read_size = recv(socket , input , MAX_BUFFER , 0);
+    read_size = recv(socket , input , MAX_STRING , 0);
     return read_size;
 }
 
 //fungsi format untuk pesan protocol
-void format_message(char output[MAX_BUFFER], char state[20], char flag[30], char receiver[MAX_USERNAME], char sender[MAX_USERNAME], char content_type[10], char content[MAX_BUFFER/2])
+void format_message(char output[MAX_STRING], char state[20], char flag[30], char receiver[MAX_USERNAME], char sender[MAX_USERNAME], char content_type[10], char content[MAX_STRING/2])
 {
     strcpy(output, state);
     strcat(output, "\r\n");
@@ -779,7 +770,7 @@ void show_all_users(client_data **head)
 void send_data_online_users(client_data **head, int clisock, char username[MAX_USERNAME])
 {
     client_data *iter = *head;
-    char data_users[MAX_BUFFER];
+    char data_users[MAX_STRING/2];
     printf("SEBELUM KIRIM\n");
     for(; iter != NULL; iter = iter->next)
     {
@@ -792,7 +783,7 @@ void send_data_online_users(client_data **head, int clisock, char username[MAX_U
     }
     
     
-    char output[MAX_BUFFER];
+    char output[MAX_STRING];
     format_message(output, "LIST_USER","LIST_USER_SEND","0",username,"LIST",data_users);
     send_data(clisock,output);
     printf("SESUDAH KIRIM, panjang = %d\n", (int)strlen(output));
@@ -804,7 +795,6 @@ void send_data_online_users(client_data **head, int clisock, char username[MAX_U
 void broadcast_user_availability(client_data **head, char except[MAX_USERNAME], char state[10])
 {
     client_data *iter = *head;
-    //char data_users[MAX_BUFFER] = "";
     
     printf("SEBELUM BROADCAST\n");
     
@@ -819,7 +809,7 @@ void broadcast_user_availability(client_data **head, char except[MAX_USERNAME], 
         }
     }*/
     
-    char output[MAX_BUFFER];
+    char output[MAX_STRING];
     if(strcmp(state, "ONLINE") == 0)
     {
         format_message(output, "LIST_USER","LIST_USER_SEND_ONLINE","0","0","LIST",except);
@@ -964,7 +954,7 @@ void delete_all(client_data **head)
 }
 
 //fungsi strip pesan sesuai protocol
-void strip_message(char output[6][MAX_BUFFER], char buffer[MAX_BUFFER])
+void strip_message(char output[6][MAX_STRING], char buffer[MAX_STRING])
 {
     char *container;
     int counter = 0;
@@ -980,7 +970,7 @@ void strip_message(char output[6][MAX_BUFFER], char buffer[MAX_BUFFER])
 }
 
 //fungsi free buffer
-void clear_buffer_protocol(char buffer_protocol[6][MAX_BUFFER])
+void clear_buffer_protocol(char buffer_protocol[6][MAX_STRING])
 {
     int counter;
 	for(counter = 0; counter <= 5; counter++)
@@ -992,10 +982,10 @@ void clear_buffer_protocol(char buffer_protocol[6][MAX_BUFFER])
 //fungsi signup
 void signup(client_data *connected_user, char client_ip[MAX_IP], char username[MAX_USERNAME], char password[MAX_PASSWORD])
 {
-    char output[MAX_BUFFER] = "",
-         input[MAX_BUFFER] = "",
-         user_and_session[MAX_BUFFER] = "",
-         buffer_protocol[6][MAX_BUFFER];
+    char output[MAX_STRING] = "",
+         input[MAX_STRING] = "",
+         user_and_session[MAX_STRING] = "",
+         buffer_protocol[6][MAX_STRING];
     
     if(!username_exist(&head, username))
     {
@@ -1004,7 +994,7 @@ void signup(client_data *connected_user, char client_ip[MAX_IP], char username[M
         
         //session key give
         int random_number = rand();
-        char buffer_random[MAX_BUFFER] = "";
+        char buffer_random[MAX_STRING] = "";
         
         while (is_session_exist(&head, random_number))
         {
@@ -1042,10 +1032,10 @@ void signup(client_data *connected_user, char client_ip[MAX_IP], char username[M
 //fungsi login
 void login(client_data *connected_user, char client_ip[MAX_IP], char username[MAX_USERNAME], char password[MAX_PASSWORD])
 {
-    char output[MAX_BUFFER] = "",
-         input[MAX_BUFFER] = "",
-         user_and_session[MAX_BUFFER] = "",
-         buffer_protocol[6][MAX_BUFFER];
+    char output[MAX_STRING] = "",
+         input[MAX_STRING] = "",
+         user_and_session[MAX_STRING] = "",
+         buffer_protocol[6][MAX_STRING];
     
     strcpy(connected_user->username, username);
     strcpy(connected_user->password, password);
@@ -1055,7 +1045,7 @@ void login(client_data *connected_user, char client_ip[MAX_IP], char username[MA
     {
         //session key give
         int random_number = rand();
-        char buffer_random[MAX_BUFFER] = "";
+        char buffer_random[MAX_STRING] = "";
         
         while (is_session_exist(&head, random_number))
         {
@@ -1093,7 +1083,7 @@ void login(client_data *connected_user, char client_ip[MAX_IP], char username[MA
 //fungsi list_user
 void list_user(client_data *connected_user, char client_ip[MAX_IP], char username[MAX_USERNAME])
 {
-    char buffer_protocol[6][MAX_BUFFER];
+    char buffer_protocol[6][MAX_STRING];
     int not_valid = 1; //variable cek autentifikasi
     
     //Menerima pesan dari client
@@ -1103,8 +1093,8 @@ void list_user(client_data *connected_user, char client_ip[MAX_IP], char usernam
 //fungsi inchat
 void inchat(client_data *connected_user, char client_ip[MAX_IP], char SIGNAL[MAX_USERNAME], char receiver[MAX_USERNAME], char sender[MAX_USERNAME], char content_type[MAX_USERNAME], char content[MAX_USERNAME])
 {
-    char client_message[MAX_BUFFER] = "",
-         output[MAX_BUFFER] = "";
+    char client_message[MAX_STRING] = "",
+         output[MAX_STRING] = "";
     
     int read_size;
     int not_valid = 1; //variable cek autentifikasi
@@ -1128,7 +1118,7 @@ void inchat(client_data *connected_user, char client_ip[MAX_IP], char SIGNAL[MAX
 //fungsi logout
 void logout(client_data *connected_user)
 {
-    char output[MAX_BUFFER] = "";
+    char output[MAX_STRING] = "";
     set_user_offline(&head, *connected_user);
     format_message(output, "LOGOUT", "LOGOUT_SUCCESS", "0", connected_user->username, "NULL", "NULL");
     send_data(connected_user->socket , output);
@@ -1139,13 +1129,13 @@ void *user_handler(void *arguments)
 {
     //Autentikasi user
     thread_arguments *user = arguments;
-    char mode[MAX_BUFFER] = "",
-    input[MAX_BUFFER] = "",
-    username[MAX_USERNAME] = "",
-    password[MAX_PASSWORD] = "",
-    username_in_session[MAX_BUFFER] = "",
-    session_key_temp[MAX_BUFFER] = "",
-    buffer_protocol[6][MAX_BUFFER];
+    char mode[MAX_STRING] = "",
+    input[MAX_STRING] = "",
+    username[MAX_STRING] = "",
+    password[MAX_STRING] = "",
+    username_in_session[MAX_STRING] = "",
+    session_key_temp[MAX_STRING] = "",
+    buffer_protocol[6][MAX_STRING];
     int read_size;
     int error = 0;
     client_data connected_user;
@@ -1201,7 +1191,7 @@ void *user_handler(void *arguments)
                     else
                     {
                         printf("Intruder Detected!!!");
-                        char error_message[MAX_BUFFER] = "";
+                        char error_message[MAX_STRING] = "";
                         format_message(error_message, "HOME", "ERROR", "0", "0", "NULL", "NULL");
                         send_data(connected_user.socket,error_message);
                     }
@@ -1226,7 +1216,7 @@ void *user_handler(void *arguments)
                         else
                         {
                             printf("Intruder Detected!!!");
-                            char error_message[MAX_BUFFER] = "";
+                            char error_message[MAX_STRING] = "";
                             format_message(error_message, "HOME", "ERROR", "0", "0", "NULL", "NULL");
                             send_data(connected_user.socket,error_message);
                         }
@@ -1252,14 +1242,14 @@ void *user_handler(void *arguments)
                             else
                             {
                                 printf("Intruder Detected!!!");
-                                char error_message[MAX_BUFFER] = "";
+                                char error_message[MAX_STRING] = "";
                                 format_message(error_message, "HOME", "ERROR", "0", "0", "NULL", "NULL");
                                 send_data(connected_user.socket,error_message);
                             }
                         }
                         else
                         {
-                            char error_message[MAX_BUFFER] = "";
+                            char error_message[MAX_STRING] = "";
                             format_message(error_message, "HOME", "ERROR", "0", "0", "NULL", "NULL");
                             send_data(connected_user.socket,error_message);
                             //error = 1;
@@ -1301,8 +1291,7 @@ int main(int argc , char *argv[])
     
     char str[INET_ADDRSTRLEN],
          username[MAX_USERNAME] = "",
-         password[MAX_PASSWORD] = "",
-         garbage[MAX_BUFFER] = ""; //dump
+         password[MAX_PASSWORD] = "";
     
     srand(time(NULL));
     

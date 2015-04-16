@@ -6,10 +6,12 @@
 #include <string.h>
 #include <QObject>
 #include <QTcpSocket>
-#define MAX_BUFFER 4096
+#define MAX_BUFFER 8192
+#define MAX_STRING 4096
 #define WAIT_TIME 3000 //in miliseconds
 #define Nb 4
-#define MAX_DIVIDE MAX_BUFFER / 16
+#define MAX_DIVIDE MAX_BUFFER / 32
+#define MAX_BUFF_DIVIDE MAX_STRING / 16
 
 // xtime is a macro that finds the product of {02} and the argument to xtime modulo {1b}
 #define xtime(x)   ((x<<1) ^ (((x>>7) & 1) * 0x1b))
@@ -77,11 +79,11 @@ private:
     void convertToReal(char*, char*);
     void containHex(char[MAX_BUFFER][1], char*);
 
-    char* xor_str(char*, int, char*);
-    char* stringToHex(char*, int);
+    void xor_str(char*, char*, char*);
     void char2hex(char*, char*);
-    void xor_str2(char*, char*, char*);
-    void divideAscii(char[MAX_BUFFER][17], char*);
+    void divideAscii(char[MAX_STRING][17], char*);
+    void divideHexa(char[MAX_BUFFER][33], char*);
+
 
     //Private Function
     QString getFormatMessage(QString, QString, QString, QString, QString, QString);

@@ -46,11 +46,11 @@ QString Connection::readData()
 {
     //testing
     QString temp = QString::fromUtf8(this->socket->read(MAX_BUFFER).trimmed());
-    qDebug("%s ", temp.toStdString().c_str());
+    qDebug("encrypted message -> %s", temp.toStdString().c_str());
 
     //decrypt here
     QString decrypted_message = AES_Decrpyt(temp);
-    qDebug("%s ", decrypted_message.toStdString().c_str());
+    qDebug("decrypted message -> %s", decrypted_message.toStdString().c_str());
     return decrypted_message;
 }
 
@@ -96,8 +96,8 @@ void Connection::AES_Encrypt(QString message)
 QString Connection::AES_Decrpyt(QString message)
 {
     char convert[MAX_BUFFER] = "";
-    char coba[MAX_BUFFER][17];
-    int b, i, blocksIV, blocksAscii;
+    char coba[MAX_STRING][17];
+    int b, i, blocksIV, blocksHexa;
 
     //AES mode (128, 192, 256) :
     this->AES_Mode = 128;
@@ -106,8 +106,8 @@ QString Connection::AES_Decrpyt(QString message)
     this->Nk = this->AES_Mode / 32;
     this->Nr = this->Nk + 6;
 
-    //Initialization Vector
-    strcpy(IV, "0123456789abcdef");
+    //Initialization Vector 16 byte
+    strcat(this->IV, "0123456789abcdef");
 
     //Key Enkripsi
     unsigned char tempkey[32] = {0x00  ,0x01  ,0x02  ,0x03  ,0x04  ,0x05  ,0x06  ,0x07  ,0x08  ,0x09  ,0x0a  ,0x0b  ,0x0c  ,0x0d  ,0x0e  ,0x0f};
@@ -117,18 +117,18 @@ QString Connection::AES_Decrpyt(QString message)
         this->Key[i]=tempkey[i];
     }
 
-    blocksAscii = ((message.length()) / 16);
+    blocksHexa = ((message.length() - 1) / 32);
 
     //dipisah 16 byte
-    char partAscii[MAX_BUFFER][17];
+    char partHexa[MAX_BUFFER][33];
     QByteArray array = message.toLocal8Bit();
     char* buffer = array.data();
-    divideAscii(partAscii, buffer);
+    divideHexa(partHexa, buffer);
 
-    char hasilxordecrypt[MAX_DIVIDE][33];
+    char hasilxordecrypt[MAX_BUFF_DIVIDE][33];
 
     //Mulai enkripsi
-    for (int ba = 0; ba <= blocksAscii; ba++)
+    for (int ba = 0; ba <= blocksHexa; ba++)
     {
         if(ba == 0)
         {
@@ -168,25 +168,13 @@ QString Connection::AES_Decrpyt(QString message)
                 }
             }
 
-            for(i=0;i<Nb*4;i++)
-            {
-                qDebug("%02x ", in[i]);
-            }
-            qDebug("\n");
-
             // Fungsi KeyExpansion untuk ekspan key
             KeyExpansion();
 
             // Fungsi Cipher
             Cipher();
 
-            for(i=0;i<Nb*4;i++)
-            {
-                qDebug("%02x ", out[i]);
-            }
-            qDebug("\n");
-
-            char tempconvert[16];
+            char tempconvert[33];
             uncharToChar(tempconvert, this->out, sizeof(this->out));
 
             memset(&convert[0], 0, sizeof(convert));
@@ -196,30 +184,32 @@ QString Connection::AES_Decrpyt(QString message)
             memset(&this->out[0], 0, sizeof(this->out));
         }
 
-        /*
         char tempRes[MAX_BUFFER];
-        xor_str2(partAscii[ba], convert, tempRes);
+        char convSelected2[MAX_BUFFER];
+
+        memset(&convSelected2[0], 0, sizeof(convSelected2));
+        strncpy(convSelected2, convert, strlen(partHexa[ba]));
+        xor_str(partHexa[ba], convSelected2, tempRes);
 
         strcpy(hasilxordecrypt[ba], tempRes);
-        */
-        strcpy(hasilxordecrypt[ba], xor_str(partAscii[ba], strlen(partAscii[ba]), convert));
-        strcpy(coba[ba], hasilxordecrypt[ba]);
-        qDebug("part Ascii dengan panjang %lu -> %s", strlen(partAscii[ba]), partAscii[ba]);
-        qDebug("hasil xor ke %d -> %s", ba, hasilxordecrypt[ba]);
+        qDebug("Encrypted message dengan panjang %lu -> %s\n", strlen(partHexa[ba]), partHexa[ba]);
+        qDebug("panjang convertSelected2 %lu -> %s\n", strlen(convSelected2), convSelected2);
+        qDebug("hasil xor ke %d -> %s\n", ba, hasilxordecrypt[ba]);
 
         char tempConvResult[MAX_BUFFER];
-        convertToReal(tempConvResult, convert);
+        convertToReal(tempConvResult, convSelected2);
         memset(&convert[0], 0, sizeof(convert));
         strcpy(convert, tempConvResult);
-        //memset(&tempRes[0], 0, sizeof(tempRes));
+        memset(&tempRes[0], 0, sizeof(tempRes));
+
+        convertToReal(coba[ba], hasilxordecrypt[ba]);
     }
 
     QString decrypted_message;
-    for(i = 0; i < blocksAscii; i++)
+    for(i = 0; i <= blocksHexa; i++)
     {
-        qDebug("diluar -> %s", coba[i]);
-        qDebug("hasil : ");
         decrypted_message.push_back(QString::fromUtf8(coba[i]));
+        memset(&coba[i][0], 0, sizeof(coba[i]));
     }
     return decrypted_message;
 }
@@ -521,40 +511,41 @@ void Connection::char2hex(char* A, char *Hex) {
     int i=0;
     int j=0;
     int t;
-    while(A[i]!=0) {
+    char temp[32];
+
+    while(A[i] != '\0') {
+
+        //printf("%d %lu\n", i, strlen(A));
+
         t = A[i] >> 4;
         if (t < 10) {
-            Hex[j] = '0' + t;
+            temp[j] = '0' + t;
         }
         else {
-            Hex[j] = 'a' + t - 10;
+            temp[j] = 'a' + t - 10;
         }
         j++;
         t = A[i] % 16;
         if (t < 10) {
-            Hex[j] = '0' + t;
+            temp[j] = '0' + t;
         }
         else {
-            Hex[j] = 'a' + t - 10;
+            temp[j] = 'a' + t - 10;
         }
         j++;
         i++;
     }
+
+    for(i = 0; i < (int)strlen(A)*2; i++)
+    {
+        Hex[i] = temp[i];
+    }
 }
 
-// Fungsi xor versi 2
-void Connection::xor_str2(char *A, char *B, char *res) {
+// Fungsi xor
+void Connection::xor_str(char *A, char *B, char *res) {
     int i = 0;
-    int j;
     int a, b, x;
-
-    if(strlen(A) < strlen(B))
-    {
-        for(j = (int)strlen(A) - 1; j < (int)strlen(B); j++)
-        {
-            A[j] = '0';
-        }
-    }
 
     while (A[i] != 0) {//kalau belum null
         if (A[i] >= '0' && A[i] <= '9') {
@@ -581,41 +572,7 @@ void Connection::xor_str2(char *A, char *B, char *res) {
     res[i] = 0;
 }
 
-char* Connection::xor_str(char *source1, int src_sz, char *source2)
-{
-
-    int i, j = 0;
-    int k_len = strlen(source2);
-    char *result = (char*)calloc(src_sz+1, sizeof(char));
-
-    for (i = 0; i < src_sz; i++) {
-        result[i] = source1[i] ^ source2[j];
-        j++;
-        j = j > k_len ? 0 : j;
-    }
-    return result;
-}
-
-char* Connection::stringToHex(char* input, int size)
-{
-    static const char* const lut = "0123456789abcdef";
-    size_t len = size;
-
-    char output[100];
-    int count = 0;
-
-    for (size_t i = 0; i < len; ++i)
-    {
-        const unsigned char c = input[i];
-        output[count] = lut[c >> 4];
-        count++;
-        output[count] = lut[c & 15];
-        count++;
-    }
-    return output;
-}
-
-void Connection::divideAscii(char dest[MAX_BUFFER][17], char *source)
+void Connection::divideAscii(char dest[MAX_STRING][17], char *source)
 {
     int i, j, part;
     part = (strlen(source) - 1) / 16;
@@ -624,12 +581,31 @@ void Connection::divideAscii(char dest[MAX_BUFFER][17], char *source)
         memset(&dest[i][0], 0, sizeof(dest[i]));
         for(j = i * 16; j < ((i+1) * 16); j++)
         {
-            if(j > (int)strlen(source))
+            if(j >= (int)strlen(source))
             {
-                dest[i][16] = '\0';
+                dest[i][j] = '\0';
                 break;
             }
             dest[i][j%16] = source[j];
+        }
+    }
+}
+
+void Connection::divideHexa(char dest[MAX_BUFFER][33], char *source)
+{
+    int i, j, part;
+    part = (strlen(source) - 1) / 32;
+    for(i = 0; i <= part; i++)
+    {
+        memset(&dest[i][0], 0, sizeof(dest[i]));
+        for(j = i * 32; j < ((i+1) * 32); j++)
+        {
+            if(j >= (int)strlen(source))
+            {
+                dest[i][j] = '\0';
+                break;
+            }
+            dest[i][j%32] = source[j];
         }
     }
 }
