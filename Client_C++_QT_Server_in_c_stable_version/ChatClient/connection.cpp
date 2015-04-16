@@ -38,8 +38,13 @@ void Connection::setPort(int port)
 //system function
 void Connection::sendData(QString state, QString flag, QString receiver, QString sender, QString type, QString content)
 {
-    //encrypt here
-    this->socket->write(this->getFormatMessage(state, flag, receiver, sender, type, content).toUtf8());
+    //encrypt
+    QString encrypted_message = AES_Encrypt(this->getFormatMessage(state, flag, receiver, sender, type, content));
+    qDebug("message -> %s", this->getFormatMessage(state, flag, receiver, sender, type, content).toStdString().c_str());
+    qDebug("encrypted message -> %s", encrypted_message.toStdString().c_str());
+
+    //send
+    this->socket->write(encrypted_message.toUtf8().trimmed());
 }
 
 QString Connection::readData()
@@ -88,9 +93,131 @@ QString Connection::getFormatMessage(QString state, QString flag, QString receiv
 }
 
 //AES function
-void Connection::AES_Encrypt(QString message)
+QString Connection::AES_Encrypt(QString message)
 {
+    char convert[MAX_BUFFER] = "";
+    char result[MAX_BUFFER][33];
+    int b, i, blocksIV, blocksAscii;
 
+    //AES mode (128, 192, 256) :
+    this->AES_Mode = 128;
+
+    //assign Nk dan Nr
+    this->Nk = this->AES_Mode / 32;
+    this->Nr = this->Nk + 6;
+
+    //Initialization Vector 16 byte
+    strcpy(this->IV, "0123456789abcdef");
+
+    //Key Enkripsi
+    unsigned char tempkey[32] = {0x00  ,0x01  ,0x02  ,0x03  ,0x04  ,0x05  ,0x06  ,0x07  ,0x08  ,0x09  ,0x0a  ,0x0b  ,0x0c  ,0x0d  ,0x0e  ,0x0f};
+
+    for(i=0;i<this->Nk*4;i++)
+    {
+        this->Key[i]=tempkey[i];
+    }
+
+    blocksAscii = ((message.length() - 1) / 16);
+
+    //dipisah 16 byte
+    char partAscii[MAX_DIVIDE][17];
+    QByteArray array = message.toLocal8Bit();
+    char* buffer = array.data();
+    divideAscii(partAscii, buffer);
+
+    char hasilxorencrypt[MAX_BUFF_DIVIDE][33];
+
+    //Mulai enkripsi
+    for (int ba = 0; ba <= blocksAscii; ba++)
+    {
+        if(ba == 0)
+        {
+            blocksIV = ((strlen(this->IV) - 1) / 16);
+            //printf("jumlah : %d\n", blocksIV);
+        }
+        else
+        {
+            blocksIV = ((strlen(convert) - 1) / 16);
+        }
+
+        for(b = 0; b <= blocksIV; b++)
+        {
+            for(i = 0; i < Nb*4; i++)
+            {
+                if(ba == 0)
+                {
+                    if((i + (b * 16) < (int)strlen(this->IV)))
+                    {
+                        this->in[i] = (unsigned char)this->IV[ (i + (b * 16) ) ];
+                    }
+                    else
+                    {
+                        this->in[i] = 0x00;
+                    }
+                }
+                else
+                {
+                    if((i + (b * 16) < (int)strlen(convert)))
+                    {
+                        this->in[i] = (unsigned char)convert[ (i + (b * 16) ) ];
+                    }
+                    else
+                    {
+                        this->in[i] = 0x00;
+                    }
+                }
+            }
+
+            // Fungsi KeyExpansion untuk ekspan key
+            KeyExpansion();
+
+            // Fungsi Cipher
+            Cipher();
+
+            char tempconvert[16];
+            uncharToChar(tempconvert, this->out, sizeof(this->out));
+
+            memset(&convert[0], 0, sizeof(convert));
+            strcat(convert, tempconvert);
+
+            memset(&this->in[0], 0, sizeof(this->in));
+            memset(&this->out[0], 0, sizeof(this->out));
+        }
+
+        char plainInHex[33];
+        char xorResult[MAX_BUFFER];
+        char convSelected[MAX_BUFFER];
+
+        memset(&convSelected[0], 0, sizeof(convSelected));
+        strncpy(convSelected, convert, strlen(partAscii[ba])*2);
+        char2hex(partAscii[ba], plainInHex);
+        xor_str(plainInHex, convSelected, xorResult);
+
+        strcpy(hasilxorencrypt[ba], xorResult);
+        qDebug("PartAscii dengan panjang %lu -> %s\n", strlen(partAscii[ba]), partAscii[ba]);
+        qDebug("panjang convertSelected %lu -> %s\n", strlen(convSelected), convSelected);
+        qDebug("hasil xor ke %d -> %s\n", ba, hasilxorencrypt[ba]);
+        strcpy(result[ba], hasilxorencrypt[ba]);
+
+        char tempConvResult[MAX_BUFFER];
+        convertToReal(tempConvResult, convSelected);
+        memset(&convert[0], 0, sizeof(convert));
+        strcpy(convert, tempConvResult);
+        memset(&plainInHex[0], 0, sizeof(plainInHex));
+        memset(&xorResult[0], 0, sizeof(xorResult));
+    }
+
+    QString encrypted_message;
+    encrypted_message.clear();
+    for(i = 0; i <= blocksAscii; i++)
+    {
+        encrypted_message.push_back(result[i]);
+        qDebug("hasil xor di luar ke %d -> %s\n", i, result[i]);
+
+        memset(&result[i][0], 0, sizeof(result[i]));
+    }
+
+    return encrypted_message;
 }
 
 QString Connection::AES_Decrpyt(QString message)
@@ -107,7 +234,7 @@ QString Connection::AES_Decrpyt(QString message)
     this->Nr = this->Nk + 6;
 
     //Initialization Vector 16 byte
-    strcat(this->IV, "0123456789abcdef");
+    strcpy(this->IV, "0123456789abcdef");
 
     //Key Enkripsi
     unsigned char tempkey[32] = {0x00  ,0x01  ,0x02  ,0x03  ,0x04  ,0x05  ,0x06  ,0x07  ,0x08  ,0x09  ,0x0a  ,0x0b  ,0x0c  ,0x0d  ,0x0e  ,0x0f};

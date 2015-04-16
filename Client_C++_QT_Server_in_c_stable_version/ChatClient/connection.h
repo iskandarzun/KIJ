@@ -62,7 +62,7 @@ private:
     unsigned char in[16], out[16], state[4][4];
 
     //AES Function
-    void AES_Encrypt(QString message);
+    QString AES_Encrypt(QString message);
     QString AES_Decrpyt(QString message);
     int getSBoxValue(int);
     int getRconValue(int);

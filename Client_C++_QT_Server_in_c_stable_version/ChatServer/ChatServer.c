@@ -17,6 +17,7 @@
 #define MAX_IP 20
 #define MAX_USERNAME 1024
 #define MAX_PASSWORD 1024
+#define AES_MODE 128 //AES-128, AES-192, AES-256
 
 //struct client data
 typedef struct client_struct
@@ -469,6 +470,25 @@ void divideAscii(char dest[MAX_DIVIDE][17], char *source)
     //printf("%d\n", strlen(dest[0]));
 }
 
+void divideHexa(char dest[MAX_BUFFER][33], char *source)
+{
+    int i, j, part;
+    part = (strlen(source) - 1) / 32;
+    for(i = 0; i <= part; i++)
+    {
+        memset(&dest[i][0], 0, sizeof(dest[i]));
+        for(j = i * 32; j < ((i+1) * 32); j++)
+        {
+            if(j >= (int)strlen(source))
+            {
+                dest[i][j] = '\0';
+                break;
+            }
+            dest[i][j%32] = source[j];
+        }
+    }
+}
+
 void AES_Encrypt(char* input, char *output)
 {
     //Enkripsi
@@ -486,19 +506,15 @@ void AES_Encrypt(char* input, char *output)
     
     char convert[MAX_BUFFER] = "";
     char real[MAX_STRING] = "";
+    char result[MAX_BUFFER][33];
     int b, i, blocksIV, blocksAscii;
-    
-    //AES mode (128, 192, 256) :
-    int AES_Mode = 128;
-    
+
     //assign Nk dan Nr
-    Nk = AES_Mode / 32;
+    Nk = AES_MODE / 32;
     Nr = Nk + 6;
     
     //Initialization Vector 16 byte
     char IV[17] = "0123456789abcdef";
-    
-    printf("HALO SELESAI");
     
     //Key Enkripsi
     unsigned char tempkey[32] = {0x00  ,0x01  ,0x02  ,0x03  ,0x04  ,0x05  ,0x06  ,0x07  ,0x08  ,0x09  ,0x0a  ,0x0b  ,0x0c  ,0x0d  ,0x0e  ,0x0f};
@@ -515,7 +531,6 @@ void AES_Encrypt(char* input, char *output)
     divideAscii(partAscii, input);
     
     char hasilxorencrypt[MAX_BUFF_DIVIDE][33];
-    char hasilxordecrypt[MAX_BUFF_DIVIDE][33];
     
     //Mulai enkripsi
     for (int ba = 0; ba <= blocksAscii; ba++)
@@ -605,6 +620,7 @@ void AES_Encrypt(char* input, char *output)
         xor_str(plainInHex, convSelected, xorResult);
         
         strcpy(hasilxorencrypt[ba], xorResult);
+        strcpy(result[ba], hasilxorencrypt[ba]);
         
         printf("blok ke : %d\n", ba);
         printf("panjang convert %lu -> %s\n", strlen(convert), convert);
@@ -623,12 +639,144 @@ void AES_Encrypt(char* input, char *output)
     
     char encrypted_message[MAX_BUFFER];
     memset(&encrypted_message[0], 0, sizeof(encrypted_message));
+    
     for(i = 0; i <= blocksAscii; i++)
     {
-        strcat(encrypted_message, hasilxorencrypt[i]);
+        strcat(encrypted_message, result[i]);
+        memset(&result[i][0], 0, sizeof(result[i]));
     }
     
     strcpy(output, encrypted_message);
+}
+
+void AES_Decrypt(char* input, char*output)
+{
+    // in - array dari pesan yang dienkripsi.
+    // out - array hasil enkripsi.
+    // state - array hasil sementara enkripsi.
+    unsigned char in[16], out[16], state[4][4];
+    
+    // Round key.
+    unsigned char RoundKey[240];
+    
+    // key input
+    unsigned char Key[32];
+
+    char convert[MAX_BUFFER] = "";
+    char coba[MAX_STRING][17];
+    int b, i, blocksIV, blocksHexa;
+    
+    //assign Nk dan Nr
+    Nk = AES_MODE / 32;
+    Nr = Nk + 6;
+    
+    //Initialization Vector 16 byte
+    char IV[17] = "0123456789abcdef";
+    
+    //Key Enkripsi
+    unsigned char tempkey[32] = {0x00  ,0x01  ,0x02  ,0x03  ,0x04  ,0x05  ,0x06  ,0x07  ,0x08  ,0x09  ,0x0a  ,0x0b  ,0x0c  ,0x0d  ,0x0e  ,0x0f};
+    
+    for(i=0;i<Nk*4;i++)
+    {
+        Key[i]=tempkey[i];
+    }
+    
+    blocksHexa = ((strlen(input) - 1) / 32);
+    
+    //dipisah 16 byte
+    char partHexa[MAX_BUFFER][33];
+    divideHexa(partHexa, input);
+    
+    char hasilxordecrypt[MAX_BUFF_DIVIDE][33];
+    
+    //Mulai enkripsi
+    for (int ba = 0; ba <= blocksHexa; ba++)
+    {
+        if(ba == 0)
+        {
+            blocksIV = ((strlen(IV) - 1) / 16);
+            //printf("jumlah : %d\n", blocksIV);
+        }
+        else
+        {
+            blocksIV = ((strlen(convert) - 1) / 16);
+        }
+        
+        for(b = 0; b <= blocksIV; b++)
+        {
+            for(i=0;i<Nb*4;i++)
+            {
+                if(ba == 0)
+                {
+                    if((i + (b * 16) < (int)strlen(IV)))
+                    {
+                        in[i] = (unsigned char)IV[ (i + (b * 16) ) ];
+                    }
+                    else
+                    {
+                        in[i] = 0x00;
+                    }
+                }
+                else
+                {
+                    if((i + (b * 16) < (int)strlen(convert)))
+                    {
+                        in[i] = (unsigned char)convert[ (i + (b * 16) ) ];
+                    }
+                    else
+                    {
+                        in[i] = 0x00;
+                    }
+                }
+            }
+            
+            // Fungsi KeyExpansion untuk ekspan key
+            KeyExpansion(RoundKey, Key);
+            
+            // Fungsi Cipher
+            Cipher(RoundKey, in, out, state);
+            
+            char tempconvert[33];
+            uncharToChar(tempconvert, out, sizeof(out));
+            
+            memset(&convert[0], 0, sizeof(convert));
+            strcat(convert, tempconvert);
+            
+            memset(&in[0], 0, sizeof(in));
+            memset(&out[0], 0, sizeof(out));
+        }
+        
+        char tempRes[MAX_BUFFER];
+        char convSelected2[MAX_BUFFER];
+        
+        memset(&convSelected2[0], 0, sizeof(convSelected2));
+        strncpy(convSelected2, convert, strlen(partHexa[ba]));
+        xor_str(partHexa[ba], convSelected2, tempRes);
+        
+        strcpy(hasilxordecrypt[ba], tempRes);
+        printf("Encrypted message dengan panjang %lu -> %s\n", strlen(partHexa[ba]), partHexa[ba]);
+        printf("panjang convertSelected2 %lu -> %s\n", strlen(convSelected2), convSelected2);
+        printf("hasil xor ke %d -> %s\n", ba, hasilxordecrypt[ba]);
+        
+        char tempConvResult[MAX_BUFFER];
+        convertToReal(tempConvResult, convSelected2);
+        memset(&convert[0], 0, sizeof(convert));
+        strcpy(convert, tempConvResult);
+        memset(&tempRes[0], 0, sizeof(tempRes));
+        
+        convertToReal(coba[ba], hasilxordecrypt[ba]);
+    }
+    
+    char decrypted_message[MAX_STRING];
+    memset(&decrypted_message[0], 0, sizeof(decrypted_message));
+    
+    for(i = 0; i <= blocksHexa; i++)
+    {
+        strcat(decrypted_message, coba[i]);
+        memset(&coba[i][0], 0, sizeof(coba[i]));
+    }
+    
+    strcpy(output, decrypted_message);
 }
 
 /******************************
@@ -654,8 +802,17 @@ void send_data(int socket, char output[MAX_STRING])
 //fungsi read data (decrypt here)
 int read_data(int socket, char input[MAX_STRING])
 {
+    char decrypted_message[MAX_BUFFER];
     int read_size;
-    read_size = recv(socket , input , MAX_STRING , 0);
+    
+    read_size = recv(socket , decrypted_message , MAX_BUFFER , 0);
+    
+    AES_Decrypt(decrypted_message, input);
+    
+    printf("pesan :\npanjang = %lu\nmessage -> %s\n", strlen(decrypted_message), decrypted_message);
+    
+    printf("hasil dekripsi :\npanjang = %lu\nmessage -> %s\n", strlen(input), input);
+    
     return read_size;
 }
 
