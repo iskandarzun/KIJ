@@ -630,6 +630,7 @@ void AES_Encrypt(char* input, char *output)
         printf("panjang hasilxorencrypt %lu -> %s\n", strlen(hasilxorencrypt[ba]), hasilxorencrypt[ba]);
         
         char tempConvResult[MAX_BUFFER];
+        memset(&tempConvResult[0], 0, sizeof(tempConvResult));
         convertToReal(tempConvResult, convSelected);
         memset(&convert[0], 0, sizeof(convert));
         strcpy(convert, tempConvResult);
@@ -759,11 +760,13 @@ void AES_Decrypt(char* input, char*output)
         printf("hasil xor ke %d -> %s\n", ba, hasilxordecrypt[ba]);
         
         char tempConvResult[MAX_BUFFER];
+        memset(&tempConvResult[0], 0, sizeof(tempConvResult));
         convertToReal(tempConvResult, convSelected2);
         memset(&convert[0], 0, sizeof(convert));
         strcpy(convert, tempConvResult);
         memset(&tempRes[0], 0, sizeof(tempRes));
         
+        memset(&coba[ba][0], 0, sizeof(coba[ba]));
         convertToReal(coba[ba], hasilxordecrypt[ba]);
     }
     
@@ -1277,8 +1280,8 @@ void logout(client_data *connected_user)
 {
     char output[MAX_STRING] = "";
     set_user_offline(&head, *connected_user);
-    format_message(output, "LOGOUT", "LOGOUT_SUCCESS", "0", connected_user->username, "NULL", "NULL");
-    send_data(connected_user->socket , output);
+    //format_message(output, "LOGOUT", "LOGOUT_SUCCESS", "0", connected_user->username, "NULL", "NULL");
+    //send_data(connected_user->socket , output);
 }
 
 //fungsi handler menggunakan thread
