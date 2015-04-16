@@ -29,7 +29,7 @@ Type |  Client 		  |  Server
 State |'SIGNUP' |'INCHAT' / 'SIGNUP'
 Flag |'AUTH_REQUEST' | 'SIGNUP_SUCCESS' / 'SIGNUP_FAILED'
 Tujuan |0 |0
-Sender |0 | 'Username pengirim' / 'NULL'
+Sender |0 | 'Username pengirim:SessionKey' / 'NULL'
 Type   |'AUTH'  | 'NULL' 
 Content |'username:password' | 'NULL'
 
@@ -41,7 +41,7 @@ Type |  Client 		  |  Server
 State |'LOGIN' |'INCHAT' / 'LOGIN'
 Flag |'AUTH_REQUEST' | 'LOGIN_SUCCESS' / 'LOGIN_FAILED'
 Tujuan |0 |0
-Sender |0 | 'Username pengirim' / 'NULL'
+Sender |0 | 'Username pengirim:SessionKey' / 'NULL'
 Type   |'AUTH'  | 'NULL' 
 Content |'username:password' | 'NULL'
 
@@ -52,17 +52,30 @@ Type |  Client 		  |  Server
 State |'INCHAT' |'INCHAT'
 Flag |'SEND_MESSAGE' | 'SEND_MESSAGE'
 Tujuan |'Username tujuan' |'Username tujuan'
-Sender |'Username pengirim' |'Username pengirim'
+Sender |'Username pengirim:SessionKey' |'Username pengirim:SessionKey'
 Content |'Isi Pesan' |'Isi Pesan'
 
 ## Hal yang harus dikerjakan
 Daftar hal yang harus dikerjakan saat ini, antara lain:
+
+#### Aplikasi
 - [x] Code Dasar Server dan Client
 - [x] Definisi protokol dan metode yang digunakan
 - [x] Integrasi antara client dan server
 - [x] Uji coba
 - [x] Dokumentasi dan diskusi
 - [x] fixing bug issues part 1 (cara kerja sistem)
-- [ ] user error handling
-- [ ] Pengamanan sistem (implementasi enkripsi dan lain-lain)
-- [ ] Uji coba 2 (Pengamanan sistem)
+
+#### Sekuritas
+- [x] user error handling
+- [x] Implementasi Session Key untuk autentifikasi
+- [x] Implementasi enkripsi - dekripsi antara Client - Server
+- [x] Uji coba 1 (enkripsi seluruh pesan)
+- [ ] Implementasi enkripsi isi pesan antara Client - Client
+- [ ] Uji coba 2 (enkripsi isi pesan private)
+- [ ] Implementasi Distribute key dengan diffie-helman
+- [ ] Uji coba 3 (Key Exchange)
+- [ ] Implementasi hash untuk password (optional)
+- [ ] Implementasi hash dari pesan untuk autentikasi (optional)   
+- [ ] Uji coba 4 (hash)
+- [ ] Finalisasi (fixing bug issues part 2, etc)
