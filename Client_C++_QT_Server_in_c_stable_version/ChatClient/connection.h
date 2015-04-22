@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <math.h>
 #include <QObject>
 #include <QTcpSocket>
 #define MAX_BUFFER 8192
@@ -12,6 +14,7 @@
 #define Nb 4
 #define MAX_BUFF_DIVIDE MAX_BUFFER / 32
 #define MAX_DIVIDE MAX_STRING / 16
+#define LIMIT_KEY 16
 
 // xtime is a macro that finds the product of {02} and the argument to xtime modulo {1b}
 #define xtime(x)   ((x<<1) ^ (((x>>7) & 1) * 0x1b))
@@ -46,11 +49,28 @@ public slots:
     void waiting();
     void emitSignalReady();
 
+    //Diffie-helman
+    void sendKey();
+    void readKey();
+    int readConfirmation();
+
 private:
     //Properties
     QTcpSocket *socket;
     QString serverAddress;
     int port;
+
+    //Diffie-helman properties
+    uint64_t privateKey;
+    uint64_t publicKeyP;
+    uint64_t publicKeyQ;
+    uint64_t serverKey;
+
+    //Diffie-helman function
+    void initPrivateKey();
+    void setPublicKey(uint64_t, uint64_t, uint64_t);
+    uint64_t getPublicKeyG();
+    uint64_t getSharedKey(uint64_t);
 
     //AES Properties
     unsigned char Key[32];
@@ -62,8 +82,8 @@ private:
     unsigned char in[16], out[16], state[4][4];
 
     //AES Function
-    QString AES_Encrypt(QString message);
-    QString AES_Decrpyt(QString message);
+    QString AES_Encrypt(QString, uint64_t);
+    QString AES_Decrpyt(QString, uint64_t);
     int getSBoxValue(int);
     int getRconValue(int);
     void KeyExpansion();
@@ -72,18 +92,16 @@ private:
     void ShiftRows();
     void MixColumns();
     void Cipher();
-    char hexDigit(unsigned);
-    void charToHex(char, char[2]);
+    void GenerateIV(long long int, char*);
+
     char hexToAscii(char, char);
     void uncharToChar(char*, unsigned char*, size_t);
     void convertToReal(char*, char*);
     void containHex(char[MAX_BUFFER][1], char*);
-
     void xor_str(char*, char*, char*);
     void char2hex(char*, char*);
     void divideAscii(char[MAX_STRING][17], char*);
     void divideHexa(char[MAX_BUFFER][33], char*);
-
 
     //Private Function
     QString getFormatMessage(QString, QString, QString, QString, QString, QString);

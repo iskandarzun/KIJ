@@ -55,8 +55,21 @@ void MenuWindow::goToSignup()
     //qDebug("%d", (int)this->socket->error());
     if(this->myConnection->isConnectedToServer())
     {
-        this->clearMessage();
-        ui->stackedWidget->setCurrentWidget(ui->signupWindow);
+        this->myConnection->waiting();
+        this->myConnection->readKey();
+        this->myConnection->sendKey();
+        this->myConnection->waiting();
+        if(this->myConnection->readConfirmation())
+        {
+            this->clearMessage();
+            ui->stackedWidget->setCurrentWidget(ui->signupWindow);
+        }
+        else
+        {
+            ui->serverError->setText("Koneksi ke server gagal");
+            ui->serverError->show();
+            this->myConnection->disconnecting();
+        }
     }
     else
     {
@@ -72,8 +85,21 @@ void MenuWindow::goToLogin()
     //qDebug("%d", (int)this->socket->error());
     if(this->myConnection->isConnectedToServer())
     {
-        this->clearMessage();
-        ui->stackedWidget->setCurrentWidget(ui->loginWindow);
+        this->myConnection->waiting();
+        this->myConnection->readKey();
+        this->myConnection->sendKey();
+        this->myConnection->waiting();
+        if(this->myConnection->readConfirmation())
+        {
+            this->clearMessage();
+            ui->stackedWidget->setCurrentWidget(ui->loginWindow);
+        }
+        else
+        {
+            ui->serverError->setText("Koneksi ke server gagal");
+            ui->serverError->show();
+            this->myConnection->disconnecting();
+        }
     }
     else
     {

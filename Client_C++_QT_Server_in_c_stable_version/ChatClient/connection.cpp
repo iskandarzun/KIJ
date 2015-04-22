@@ -3,8 +3,10 @@
 Connection::Connection(QObject *parent) :
     QObject(parent)
 {
+    srand(time(NULL));
     this->socket = new QTcpSocket(this);
     this->connect_slots();
+    this->initPrivateKey();
 }
 
 //connect slots
@@ -36,10 +38,59 @@ void Connection::setPort(int port)
 }
 
 //system function
+void Connection::sendKey()
+{
+    //get key
+    QString key;
+    char temp[MAX_STRING];
+    sprintf(temp, "%llu", getPublicKeyG());
+    key.push_back(temp);
+    qDebug("client public key -> %s", key.toStdString().c_str());
+    qDebug("client private key -> %llu", this->privateKey);
+
+
+    //send key
+    this->socket->write(key.toUtf8().trimmed());
+}
+
+void Connection::readKey()
+{
+    //testing
+    QString key = QString::fromUtf8(this->socket->read(MAX_BUFFER).trimmed());
+    qDebug("key server -> %s", key.toStdString().c_str());
+
+    QRegExp checker("-");
+    QStringList temp = key.split(checker);
+
+    uint64_t varP = temp[0].toInt(0, 10);
+    uint64_t varQ = temp[1].toInt(0, 10);
+    uint64_t varG = temp[2].toInt(0, 10);
+
+    setPublicKey(varP, varQ, varG);
+}
+
+int Connection::readConfirmation()
+{
+    //testing
+    QString confirmation = QString::fromUtf8(this->socket->read(MAX_BUFFER).trimmed());
+    qDebug("confirmation from server -> %s", confirmation.toStdString().c_str());
+
+    if(confirmation == "KEY_EXCHANGE_SUCCESS")
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 void Connection::sendData(QString state, QString flag, QString receiver, QString sender, QString type, QString content)
 {
     //encrypt
-    QString encrypted_message = AES_Encrypt(this->getFormatMessage(state, flag, receiver, sender, type, content));
+    uint64_t seed = getSharedKey(this->serverKey);
+    qDebug("seed -> %llu", seed);
+    QString encrypted_message = AES_Encrypt(this->getFormatMessage(state, flag, receiver, sender, type, content), seed);
     qDebug("message -> %s", this->getFormatMessage(state, flag, receiver, sender, type, content).toStdString().c_str());
     qDebug("encrypted message -> %s", encrypted_message.toStdString().c_str());
 
@@ -51,11 +102,13 @@ QString Connection::readData()
 {
     //testing
     QString temp = QString::fromUtf8(this->socket->read(MAX_BUFFER).trimmed());
-    qDebug("encrypted client message -> %s", temp.toStdString().c_str());
+    qDebug("encrypted server message -> %s", temp.toStdString().c_str());
 
     //decrypt here
-    QString decrypted_message = AES_Decrpyt(temp);
-    qDebug("decrypted client message -> %s", decrypted_message.toStdString().c_str());
+    uint64_t seed = getSharedKey(this->serverKey);
+    qDebug("seed -> %llu", seed);
+    QString decrypted_message = AES_Decrpyt(temp, seed);
+    qDebug("decrypted server message -> %s", decrypted_message.toStdString().c_str());
     return decrypted_message;
 }
 
@@ -92,8 +145,37 @@ QString Connection::getFormatMessage(QString state, QString flag, QString receiv
     return output;
 }
 
+//Diffie-helman function
+void Connection::initPrivateKey()
+{
+    this->privateKey = rand() % LIMIT_KEY;
+}
+
+void Connection::setPublicKey(uint64_t P, uint64_t Q, uint64_t G)
+{
+    this->publicKeyP = P;
+    this->publicKeyQ = Q;
+    this->serverKey = G;
+}
+
+uint64_t Connection::getPublicKeyG()
+{
+    uint64_t power = pow((double)this->publicKeyP, (double)this->privateKey);
+    uint64_t result = (uint64_t)(power % this->publicKeyQ);
+    return result;
+}
+
+uint64_t Connection::getSharedKey(uint64_t publicKeyG)
+{
+    uint64_t power = pow((double)publicKeyG, (double)this->privateKey);
+    uint64_t result = (uint64_t)(power % this->publicKeyQ);
+    return result;
+}
+
+//Diffie-helman end
+
 //AES function
-QString Connection::AES_Encrypt(QString message)
+QString Connection::AES_Encrypt(QString message, uint64_t seed)
 {
     char convert[MAX_BUFFER];
     char result[MAX_BUFFER][33];
@@ -107,7 +189,7 @@ QString Connection::AES_Encrypt(QString message)
     this->Nr = this->Nk + 6;
 
     //Initialization Vector 16 byte
-    strcpy(this->IV, "0123456789abcdef");
+    GenerateIV(seed, this->IV);
 
     //Key Enkripsi
     unsigned char tempkey[32] = {0x00  ,0x01  ,0x02  ,0x03  ,0x04  ,0x05  ,0x06  ,0x07  ,0x08  ,0x09  ,0x0a  ,0x0b  ,0x0c  ,0x0d  ,0x0e  ,0x0f};
@@ -229,7 +311,7 @@ QString Connection::AES_Encrypt(QString message)
     return encrypted_message;
 }
 
-QString Connection::AES_Decrpyt(QString message)
+QString Connection::AES_Decrpyt(QString message, uint64_t seed)
 {
     char convert[MAX_BUFFER];
     char coba[MAX_DIVIDE][17];
@@ -243,7 +325,7 @@ QString Connection::AES_Decrpyt(QString message)
     this->Nr = this->Nk + 6;
 
     //Initialization Vector 16 byte
-    strcpy(this->IV, "0123456789abcdef");
+    GenerateIV(seed, this->IV);
 
     //Key Enkripsi
     unsigned char tempkey[32] = {0x00  ,0x01  ,0x02  ,0x03  ,0x04  ,0x05  ,0x06  ,0x07  ,0x08  ,0x09  ,0x0a  ,0x0b  ,0x0c  ,0x0d  ,0x0e  ,0x0f};
@@ -586,22 +668,6 @@ void Connection::Cipher()
 }
 //AES Procedure end
 
-char Connection::hexDigit(unsigned n)
-{
-    if (n < 10) {
-        return n + '0';
-    } else {
-        return (n - 10) + 'A';
-    }
-}
-
-void Connection::charToHex(char c, char hex[2])
-{
-    hex[0] = hexDigit(c / 0x10);
-    hex[1] = hexDigit(c % 0x10);
-    //hex[2] = '\0';
-}
-
 char Connection::hexToAscii(char first, char second)
 {
     char hex[5], *stop;
@@ -756,6 +822,86 @@ void Connection::divideHexa(char dest[MAX_BUFFER][33], char *source)
             dest[i][j%32] = source[j];
         }
     }
+}
+
+void Connection::GenerateIV(long long int seed, char *out)
+{
+    char result[17];
+    char randomletter[27] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    memset(&result[0], 0, sizeof(result));
+
+    for(int i = 0; i < 16; i++)
+    {
+        switch(i)
+        {
+            case 0:
+                result[i] = randomletter[(seed) % 26];
+                break;
+
+            case 1:
+                result[i] = randomletter[(i+(seed*2)) % 26];
+                break;
+
+            case 2:
+                result[i] = randomletter[(seed*i) % 26];
+                break;
+
+            case 3:
+                result[i] = randomletter[((seed*5)/i) % 26];
+                break;
+
+            case 4:
+                result[i] = randomletter[((seed*seed)-i) % 26];
+                break;
+
+            case 5:
+                result[i] = randomletter[((seed*i)+seed) % 26];
+                break;
+
+            case 6:
+                result[i] = randomletter[((seed*i)+(seed/i)) % 26];
+                break;
+
+            case 7:
+                result[i] = randomletter[((seed*i)-(seed/i)) % 26];
+                break;
+
+            case 8:
+                result[i] = randomletter[((seed+i)+(seed-i)) % 26];
+                break;
+
+            case 9:
+                result[i] = randomletter[((seed+i)*(seed)) % 26];
+                break;
+
+            case 10:
+                result[i] = randomletter[((seed*i)+(seed*i)) % 26];
+                break;
+
+            case 11:
+                result[i] = randomletter[((seed*i)*(seed*i)) % 26];
+                break;
+
+            case 12:
+                result[i] = randomletter[((seed+i)+(seed*i)) % 26];
+                break;
+
+            case 13:
+                result[i] = randomletter[((seed*i)/(seed+i)) % 26];
+                break;
+
+            case 14:
+                result[i] = randomletter[((seed/i)+(seed)) % 26];
+                break;
+
+            case 15:
+                result[i] = randomletter[((seed/i)*(seed+i)) % 26];
+                break;
+        }
+    }
+    memset(&out[0], 0, sizeof(out));
+    strcpy(out, result);
 }
 
 
