@@ -71,10 +71,10 @@ Daftar hal yang harus dikerjakan saat ini, antara lain:
 - [x] Implementasi Session Key untuk autentifikasi
 - [x] Implementasi enkripsi - dekripsi antara Client - Server
 - [x] Uji coba 1 (enkripsi seluruh pesan)
+- [x] Implementasi Distribute key dengan diffie-helman dan pseudorandom generator key + IV
+- [x] Uji coba 2 (Key Exchange dan pseudorandom generator)
 - [ ] Implementasi enkripsi isi pesan antara Client - Client
-- [ ] Uji coba 2 (enkripsi isi pesan private)
-- [ ] Implementasi Distribute key dengan diffie-helman dan pseudorandom generator key + IV
-- [ ] Uji coba 3 (Key Exchange dan pseudorandom generator)
+- [ ] Uji coba 3 (enkripsi isi pesan private)
 - [ ] Implementasi hash untuk password (optional)
 - [ ] Implementasi hash dari pesan untuk autentikasi (optional)   
 - [ ] Uji coba 4 (hash)
