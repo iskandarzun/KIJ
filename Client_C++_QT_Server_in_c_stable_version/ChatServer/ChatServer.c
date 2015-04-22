@@ -5,12 +5,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <ctype.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <time.h>
+#include <math.h>
 
 #define MAX_BUFFER 8192
 #define MAX_STRING 4096
@@ -18,6 +20,7 @@
 #define MAX_USERNAME 1024
 #define MAX_PASSWORD 1024
 #define AES_MODE 128 //AES-128, AES-192, AES-256
+#define LIMIT_RAND 32
 
 //struct client data
 typedef struct client_struct
@@ -29,6 +32,7 @@ typedef struct client_struct
     int online;
     int session_key;
     int socket;
+    uint64_t client_public_key;
     struct client_struct *next;
 } client_data;
 
@@ -43,6 +47,150 @@ typedef struct args
 client_data *head = NULL; //pointer linked list
 char users_online[20][20]; //belum diimplementasi
 int user_count = 0; //belum diimplementasi
+
+/***************************************
+ ****** Diffie-helman Key Exchange *****
+ ***************************************/
+
+// variabel P dalam Diffie helman (primitive root Q)
+uint64_t P=0;
+
+// variabel Q dalam Diffie helman (modulo)
+uint64_t Q=0;
+
+// Public key server dalam diffie helman (P^Private Key mod Q)
+uint64_t public_key=0;
+
+// Private key server dalam diffie helman
+uint64_t private_key=0;
+
+// Fungsi generate bilangan prima
+uint64_t generatePrime()
+{
+    uint64_t random = 0;
+    int prime = 0;
+    uint64_t result;
+    
+    while (random % 2 == 0 || prime == 0)
+    {
+        random = rand() % LIMIT_RAND;
+        
+        uint64_t limit = sqrt(random);
+        
+        prime = 1;
+        for (uint64_t i = 3; i <= limit; i+=2)
+        {
+            if(random % i == 0)
+            {
+                prime = 0;
+                break;
+            }
+        }
+        
+        if(prime == 1)
+        {
+            result = random;
+        }
+    }
+    
+    return result;
+}
+
+// Fungsi generate random primitive root
+uint64_t getRandomPrimitiveRoot(uint64_t prime)
+{
+    uint64_t result[10];
+    int count = 0;
+    
+    uint64_t limit = 5;
+    
+    
+    for (uint64_t i = 2; i < limit; i++)
+    {
+        
+        uint64_t start = 1;
+        int flag = 1;
+        
+        for (uint64_t j = 0; j< prime / 2; j++)
+        {
+            start = (start * i) % prime;
+            if (start % prime == 1)
+            {
+                flag = 0;
+                break;
+            }
+        }
+        if (flag)
+        {
+            result[count] = i;
+            count++;
+        }
+    }
+    
+    uint64_t random = rand() % count;
+    
+    return result[random];
+}
+
+uint64_t getPublicKey()
+{
+    uint64_t power = pow((double)P, (double)private_key);
+    uint64_t result = (uint64_t)(power % Q);
+    return result;
+}
+
+uint64_t getSharedKey(uint64_t publicKeyClient)
+{
+    uint64_t power = pow((double)publicKeyClient, (double)private_key);
+    uint64_t result = (uint64_t)(power % Q);
+    return result;
+}
+
+void format_key(char *output, long long int varP, long long int varQ, long long int varG)
+{
+    char stringP[MAX_STRING], stringQ[MAX_STRING], stringG[MAX_STRING];
+    
+    sprintf(stringP, "%llu", varP);
+    sprintf(stringQ, "%llu", varQ);
+    sprintf(stringG, "%llu", varG);
+    
+    strcpy(output, stringP);
+    strcat(output, "-");
+    strcat(output, stringQ);
+    strcat(output, "-");
+    strcat(output, stringG);
+}
+
+int rightKey(char* input)
+{
+    for(int i = 0; i < (int)strlen(input); i++)
+    {
+        if(!isnumber(input[i]))
+        {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+//fungsi mendapat public key user
+uint64_t get_public_key(client_data **head, int socket)
+{
+    client_data *iter = *head;
+    
+    for(; iter != NULL; iter = iter->next)
+    {
+        if(iter->socket == socket)
+        {
+            return iter->client_public_key;
+        }
+    }
+    return 345;
+}
+
+/*********************************
+ ****** End of Diffie-helman *****
+ *********************************/
 
 /******************************
 ****** Enkripsi AES + OFB *****
@@ -489,7 +637,86 @@ void divideHexa(char dest[MAX_BUFFER][33], char *source)
     }
 }
 
-void AES_Encrypt(char* input, char *output)
+void GenerateIV(long long int seed, char *out)
+{
+    char result[17];
+    char randomletter[27] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    memset(&result[0], 0, sizeof(result));
+    
+    for(int i = 0; i < 16; i++)
+    {
+        switch(i)
+        {
+            case 0:
+                result[i] = randomletter[(seed) % 26];
+                break;
+                
+            case 1:
+                result[i] = randomletter[(i+(seed*2)) % 26];
+                break;
+                
+            case 2:
+                result[i] = randomletter[(seed*i) % 26];
+                break;
+                
+            case 3:
+                result[i] = randomletter[((seed*5)/i) % 26];
+                break;
+                
+            case 4:
+                result[i] = randomletter[((seed*seed)-i) % 26];
+                break;
+                
+            case 5:
+                result[i] = randomletter[((seed*i)+seed) % 26];
+                break;
+                
+            case 6:
+                result[i] = randomletter[((seed*i)+(seed/i)) % 26];
+                break;
+                
+            case 7:
+                result[i] = randomletter[((seed*i)-(seed/i)) % 26];
+                break;
+                
+            case 8:
+                result[i] = randomletter[((seed+i)+(seed-i)) % 26];
+                break;
+                
+            case 9:
+                result[i] = randomletter[((seed+i)*(seed)) % 26];
+                break;
+                
+            case 10:
+                result[i] = randomletter[((seed*i)+(seed*i)) % 26];
+                break;
+                
+            case 11:
+                result[i] = randomletter[((seed*i)*(seed*i)) % 26];
+                break;
+                
+            case 12:
+                result[i] = randomletter[((seed+i)+(seed*i)) % 26];
+                break;
+                
+            case 13:
+                result[i] = randomletter[((seed*i)/(seed+i)) % 26];
+                break;
+                
+            case 14:
+                result[i] = randomletter[((seed/i)+(seed)) % 26];
+                break;
+                
+            case 15:
+                result[i] = randomletter[((seed/i)*(seed+i)) % 26];
+                break;
+        }
+    }
+    memset(&out[0], 0, sizeof(out));
+    strcpy(out, result);
+}
+
+void AES_Encrypt(char* input, char *output, uint64_t seed)
 {
     //Enkripsi
     
@@ -514,7 +741,8 @@ void AES_Encrypt(char* input, char *output)
     Nr = Nk + 6;
     
     //Initialization Vector 16 byte
-    char IV[17] = "0123456789abcdef";
+    char IV[17];
+    GenerateIV(seed, IV);
     
     //Key Enkripsi
     unsigned char tempkey[32] = {0x00  ,0x01  ,0x02  ,0x03  ,0x04  ,0x05  ,0x06  ,0x07  ,0x08  ,0x09  ,0x0a  ,0x0b  ,0x0c  ,0x0d  ,0x0e  ,0x0f};
@@ -650,7 +878,7 @@ void AES_Encrypt(char* input, char *output)
     strcpy(output, encrypted_message);
 }
 
-void AES_Decrypt(char* input, char*output)
+void AES_Decrypt(char* input, char*output, uint64_t seed)
 {
     // in - array dari pesan yang dienkripsi.
     // out - array hasil enkripsi.
@@ -672,7 +900,8 @@ void AES_Decrypt(char* input, char*output)
     Nr = Nk + 6;
     
     //Initialization Vector 16 byte
-    char IV[17] = "0123456789abcdef";
+    char IV[17];
+    GenerateIV(seed, IV);
     
     //Key Enkripsi
     unsigned char tempkey[32] = {0x00  ,0x01  ,0x02  ,0x03  ,0x04  ,0x05  ,0x06  ,0x07  ,0x08  ,0x09  ,0x0a  ,0x0b  ,0x0c  ,0x0d  ,0x0e  ,0x0f};
@@ -790,8 +1019,15 @@ void AES_Decrypt(char* input, char*output)
 void send_data(int socket, char output[MAX_STRING])
 {
     char encrypted_message[MAX_BUFFER];
+    uint64_t client_public_key;
+    uint64_t seed;
     
-    AES_Encrypt(output, encrypted_message);
+    client_public_key = get_public_key(&head, socket);
+    seed = getSharedKey(client_public_key);
+    
+    printf("seed = %llu\n", seed);
+    
+    AES_Encrypt(output, encrypted_message, seed);
     
     printf("pesan :\npanjang = %lu\nmessage -> %s\n", strlen(output), output);
     
@@ -803,14 +1039,16 @@ void send_data(int socket, char output[MAX_STRING])
 }
 
 //fungsi read data (decrypt here)
-int read_data(int socket, char input[MAX_STRING])
+int read_data(int socket, char input[MAX_STRING], uint64_t seed)
 {
     char decrypted_message[MAX_BUFFER];
     int read_size;
     
+    printf("seed = %llu\n", seed);
+    
     read_size = recv(socket , decrypted_message , MAX_BUFFER , 0);
     
-    AES_Decrypt(decrypted_message, input);
+    AES_Decrypt(decrypted_message, input, seed);
     
     printf("pesan :\npanjang = %lu\nmessage -> %s\n", strlen(decrypted_message), decrypted_message);
     
@@ -881,6 +1119,7 @@ void set_user_online(client_data **head, client_data user)
             iter->online = 1;
             iter->socket = user.socket;
             iter->session_key = user.session_key;
+            iter->client_public_key = user.client_public_key;
             return;
         }
     }
@@ -896,6 +1135,7 @@ void set_user_offline(client_data **head, client_data user)
         {
             iter->online = 0;
             iter->session_key = 0;
+            iter->client_public_key = 0;
             return;
         }
     }
@@ -931,17 +1171,28 @@ void send_data_online_users(client_data **head, int clisock, char username[MAX_U
 {
     client_data *iter = *head;
     char data_users[MAX_STRING/2];
+    
     printf("SEBELUM KIRIM\n");
     for(; iter != NULL; iter = iter->next)
     {
         if(iter->online == 1)
         {
+            if((int)strlen(data_users) >= (MAX_STRING/2) - 1)
+            {
+                char part_output[MAX_STRING];
+                format_message(part_output, "LIST_USER","LIST_USER_SEND","0",username,"LIST",data_users);
+                send_data(clisock, part_output);
+                printf("KIRIM PART DATA, panjang = %d\n", (int)strlen(part_output));
+                
+                memset(&part_output[0], 0, sizeof(part_output));
+                memset(&data_users[0], 0, sizeof(data_users));
+            }
+            
             strcat(data_users, iter->username);
             strcat(data_users, ":");
             printf("%s online\n", iter->username);
         }
     }
-    
     
     char output[MAX_STRING];
     format_message(output, "LIST_USER","LIST_USER_SEND","0",username,"LIST",data_users);
@@ -1299,8 +1550,36 @@ void *user_handler(void *arguments)
     int read_size;
     int error = 0;
     client_data connected_user;
+    
     connected_user.socket = user->client_socket;
-    while( (read_size = read_data(connected_user.socket , input)) > 0)
+    
+    //key exchange
+    char stringKey[MAX_STRING];
+    char clientKey[MAX_STRING];
+    int exchange_fail = 0;
+    
+    format_key(stringKey, P, Q, public_key);
+    
+    write(connected_user.socket, stringKey, strlen(stringKey));
+    recv(connected_user.socket , clientKey, MAX_STRING, 0);
+    
+    if(rightKey(clientKey))
+    {
+        uint64_t tempClientKey = atoi(clientKey);
+        connected_user.client_public_key = tempClientKey;
+        printf("Key Exchange Success\n");
+        printf("Key = %s\n", stringKey);
+        printf("Client Public Key = %llu\n", tempClientKey);
+        write(connected_user.socket, "KEY_EXCHANGE_SUCCESS", strlen("KEY_EXCHANGE_SUCCESS"));
+    }
+    else
+    {
+        printf("Key Exchange Failed\n");
+        write(connected_user.socket, "KEY_EXCHANGE_FAILED", strlen("KEY_EXCHANGE_FAILED"));
+        exchange_fail = 1;
+    }
+    
+    while( (read_size = read_data(connected_user.socket , input, getSharedKey(connected_user.client_public_key))) > 0 && exchange_fail == 0)
     {
         strip_message(buffer_protocol,input);
         printf("%s\n", buffer_protocol[0]);
@@ -1419,7 +1698,7 @@ void *user_handler(void *arguments)
         memset(&input[0], 0, sizeof(input));
     }
     
-    if(read_size == 0)
+    if(read_size == 0 || exchange_fail == 1)
     {
         puts("Client disconnected");
         //printf("%s\n", connected_user.username);
@@ -1502,6 +1781,21 @@ int main(int argc , char *argv[])
         return 1;
     }
     puts("bind done");
+    
+    //Generating key
+    puts("Generating key...");
+    
+    private_key = rand() % 32;
+    Q = generatePrime();
+    P = getRandomPrimitiveRoot(Q);
+    public_key = getPublicKey();
+    
+    puts("Key has been Generated!");
+    printf("variabel P = %llu\n", P);
+    printf("variabel Q = %llu\n", Q);
+    printf("private key = %llu\n", private_key);
+    printf("public key = %llu\n", public_key);
+
     
     //Listen
     listen(socket_desc , 3);
