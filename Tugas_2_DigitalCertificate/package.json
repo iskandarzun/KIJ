@@ -1,0 +1,14 @@
+{
+  "name": "Tugas2KIJ_CA",
+  "version": "1.0.0",
+  "description": "Tugas 2 KIJ Membuat Certificate Authorization melalui webservice",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "KIJ_CA"
+  ],
+  "author": "Mahasiswa_ITS",
+  "license": "ISC"
+}
