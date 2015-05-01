@@ -4,6 +4,7 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var port = 9000;
 
 var routes = require('./routes/index');
 //var users = require('./routes/users');
@@ -57,5 +58,6 @@ app.use(function(err, req, res, next) {
     error: {}
   });
 });
-app.listen(9000);
+app.listen(port);
+console.log('Listening on port : %d', port);
 module.exports = app;
