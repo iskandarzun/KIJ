@@ -62,12 +62,12 @@ router.get('/', function(req, res, next) {
 });
 
 // GET dashboard in page 
-router.get('/dashboard' ,function(req, res, next) {
+router.get('/:user/dashboard' ,function(req, res, next) {
   res.render('dashboard');
 });
 
 // GET create_cert in page 
-router.get('/create-cert' ,function(req, res, next) {
+router.get('/:user/create-cert' ,function(req, res, next) {
   res.render('create_cert');
 });
 
