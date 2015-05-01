@@ -61,6 +61,11 @@ router.get('/', function(req, res, next) {
   res.render('index');
 });
 
+router.get('/login_page', function(req, res, next) {
+  res.render('login_page');
+});
+
+
 // GET dashboard in page 
 router.get('/:user/dashboard' ,function(req, res, next) {
   res.render('dashboard');
