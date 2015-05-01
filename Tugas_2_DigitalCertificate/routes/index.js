@@ -67,12 +67,12 @@ router.get('/login_page', function(req, res, next) {
 
 
 // GET dashboard in page 
-router.get('/:user/dashboard' ,function(req, res, next) {
+router.get('/dashboard' ,function(req, res, next) {
   res.render('dashboard');
 });
 
 // GET create_cert in page 
-router.get('/:user/create-cert' ,function(req, res, next) {
+router.get('/create-cert' ,function(req, res, next) {
   res.render('create_cert');
 });
 
