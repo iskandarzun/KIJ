@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Log in - CertiTrust</title>
+  <title>Error -  CertiTrust</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <link rel="stylesheet" href="public/css/reset.css" type="text/css" media="all">
@@ -56,78 +56,29 @@
     <title>CertiTrust - Creating Trust Online</title>
       <nav>
         <ul>
-          <li><a href="/">Home</a></li>
+          <li><a href="/" class="current">Home</a></li>
           <li><a href="about.html">About</a></li>
           <li><a href="privacy.html">Feature</a></li>          
           <li><a href="contacts.html">Register</a></li>
-          <li><a href="/login_page" class="current">Log in</a></li>
+          <li><a href="/login_page">Log in</a></li>
         </ul>
       </nav>
     </div>
   </header>
 
-  <div class="main-box">
+<div class="main-box">
     <div class="container">
-      <div class="inside">
-        <div class="wrapper zerogrid">
-          <div class="row">
+        <div class="inside">
+            <div class="wrapper zerogrid">
+                <h2 style="text-align: center">Error Page : <%= status %> </h2>
 
-            <!-- aside -->
-            <div class="col-1-3">
-              <div class="wrap-col">
-                    <aside>
-                      <h2>Recent <span>News</span></h2>
-                      <!-- .news -->
-                      <ul class="news">
-                        <li>
-                          <figure><strong>22</strong>June</figure>
-                          <h3><a href="#">Sed ut perspiciatis unde</a></h3>
-                          Domnis iste natus error sit voluptam accusa doloremque <a href="#">...</a>
-                        </li>
-                        <li>
-                          <figure><strong>09</strong>June</figure>
-                          <h3><a href="#">Totam rem aperiam</a></h3>
-                          Eaqueipsa quae abillo inventoretis et quasi architecto beatae <a href="#">...</a>
-                        </li>
-                        <li>
-                          <figure><strong>31</strong>May</figure>
-                          <h3><a href="#">Inventore veritatis et quasi</a></h3>
-                          Architecto beatae vitae dicta sunt explicabo <a href="#">...</a>
-                        </li>
-                        <li>
-                          <figure><strong>25</strong>May</figure>
-                          <h3><a href="#">Nemo enim ipsam</a></h3>
-                          Voluptatem quia voluptas sit asper natur aut odit aut fugit <a href="#">...</a>
-                        </li>
-                      </ul>
-                      <!-- /.news -->
-                    </aside>  
-              </div>
+                <h3 style="text-align: center"><%= message %> </h3>
             </div>
-
-          <!-- content -->
-      <div class="col-2-3">
-        <div class="wrap-col">
-              <section id="content">
-                <form class="login_form style-1">
-                  <h3>Username</h3><input type="text" name="username">
-                  <br><br>                  
-                  <h3>Password</h3><input type="password" name="username">
-                  <br><br>
-                  <button type="submit" class="button">Log in</button>
-                  <br><br>
-                  <p>Don't have an account ? <a href="/register">Click here</a></p>
-                </form>
-
-              </section>
         </div>
-      </div>
-      </div>
-        </div>
-      </div>
     </div>
-  </div>
+</div>
 
+  
   <!-- footer -->
   <footer>
     <div class="container">

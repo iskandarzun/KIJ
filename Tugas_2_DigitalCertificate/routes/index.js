@@ -72,7 +72,7 @@ router.get('/dashboard' ,function(req, res, next) {
 });
 
 // GET create_cert in page 
-router.get('/create-cert' ,function(req, res, next) {
+router.get('/create_cert' ,function(req, res, next) {
   res.render('create_cert');
 });
 
