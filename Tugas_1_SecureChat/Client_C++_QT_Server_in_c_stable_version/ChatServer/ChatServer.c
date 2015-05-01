@@ -20,7 +20,7 @@
 #define MAX_USERNAME 1024
 #define MAX_PASSWORD 1024
 #define AES_MODE 128 //AES-128, AES-192, AES-256
-#define LIMIT_RAND 32
+#define LIMIT_RAND 16
 
 //struct client data
 typedef struct client_struct
@@ -1365,7 +1365,7 @@ void delete_all(client_data **head)
 }
 
 //fungsi strip pesan sesuai protocol
-void strip_message(char output[6][MAX_STRING], char buffer[MAX_STRING])
+int strip_message(char output[6][MAX_STRING], char buffer[MAX_STRING])
 {
     char *container;
     int counter = 0;
@@ -1378,6 +1378,14 @@ void strip_message(char output[6][MAX_STRING], char buffer[MAX_STRING])
         strcpy(output[counter], container);
         counter++;
     }
+
+    //printf("%d\n", counter);
+    if(counter == 6)
+    {
+        return 0;
+    }
+
+    return -1;
 }
 
 //fungsi free buffer
@@ -1581,62 +1589,41 @@ void *user_handler(void *arguments)
     
     while( (read_size = read_data(connected_user.socket , input, getSharedKey(connected_user.client_public_key))) > 0 && exchange_fail == 0)
     {
-        strip_message(buffer_protocol,input);
-        printf("%s\n", buffer_protocol[0]);
-        printf("%s\n", buffer_protocol[1]);
-        printf("%s\n", buffer_protocol[2]);
-        printf("%s\n", buffer_protocol[3]);
-        printf("%s\n", buffer_protocol[4]);
-        printf("%s\n", buffer_protocol[5]);
-        if(strcmp(buffer_protocol[4], "AUTH") == 0)
+        int error_status = 0;
+        error_status = strip_message(buffer_protocol,input);
+
+        if(error_status != -1)
         {
-            char *temp;
-            temp = strtok (buffer_protocol[5], ":");
-            strcpy(username, temp);
-            while (temp != NULL)
+            printf("%s\n", buffer_protocol[0]);
+            printf("%s\n", buffer_protocol[1]);
+            printf("%s\n", buffer_protocol[2]);
+            printf("%s\n", buffer_protocol[3]);
+            printf("%s\n", buffer_protocol[4]);
+            printf("%s\n", buffer_protocol[5]);
+            if(strcmp(buffer_protocol[4], "AUTH") == 0)
             {
-                temp = strtok (NULL, ":");
-                strcpy(password, temp);
-                break;
+                char *temp;
+                temp = strtok (buffer_protocol[5], ":");
+                strcpy(username, temp);
+                while (temp != NULL)
+                {
+                    temp = strtok (NULL, ":");
+                    strcpy(password, temp);
+                    break;
+                }
             }
-        }
-        if(strcmp(buffer_protocol[0], "SIGNUP") == 0)
-        {
-            //printf("signup\n");
-            signup(&connected_user, user->client_ip, username, password);
-        }
-        else
-            if(strcmp(buffer_protocol[0], "LOGIN") == 0)
+            if(strcmp(buffer_protocol[0], "SIGNUP") == 0)
             {
-                login(&connected_user, user->client_ip, username, password);
+                //printf("signup\n");
+                signup(&connected_user, user->client_ip, username, password);
             }
             else
-                if(strcmp(buffer_protocol[0], "LIST_USER") == 0)
+                if(strcmp(buffer_protocol[0], "LOGIN") == 0)
                 {
-                    char *temp_sender;
-                    temp_sender = strtok (buffer_protocol[3], ":");
-                    strcpy(username_in_session, temp_sender);
-                    while (temp_sender != NULL)
-                    {
-                        temp_sender = strtok (NULL, ":");
-                        strcpy(session_key_temp, temp_sender);
-                        break;
-                    }
-                    
-                    if(check_session(&head, &connected_user, atoi(session_key_temp)))
-                    {
-                        list_user(&connected_user, user->client_ip, username_in_session);
-                    }
-                    else
-                    {
-                        printf("Intruder Detected!!!");
-                        char error_message[MAX_STRING] = "";
-                        format_message(error_message, "HOME", "ERROR", "0", "0", "NULL", "NULL");
-                        send_data(connected_user.socket,error_message);
-                    }
+                    login(&connected_user, user->client_ip, username, password);
                 }
                 else
-                    if(strcmp(buffer_protocol[0], "INCHAT") == 0)
+                    if(strcmp(buffer_protocol[0], "LIST_USER") == 0)
                     {
                         char *temp_sender;
                         temp_sender = strtok (buffer_protocol[3], ":");
@@ -1650,7 +1637,7 @@ void *user_handler(void *arguments)
                         
                         if(check_session(&head, &connected_user, atoi(session_key_temp)))
                         {
-                            inchat(&connected_user, user->client_ip, buffer_protocol[1], buffer_protocol[2], username_in_session, buffer_protocol[4], buffer_protocol[5] );
+                            list_user(&connected_user, user->client_ip, username_in_session);
                         }
                         else
                         {
@@ -1661,7 +1648,7 @@ void *user_handler(void *arguments)
                         }
                     }
                     else
-                        if(strcmp(buffer_protocol[0], "LOGOUT") == 0)
+                        if(strcmp(buffer_protocol[0], "INCHAT") == 0)
                         {
                             char *temp_sender;
                             temp_sender = strtok (buffer_protocol[3], ":");
@@ -1675,8 +1662,7 @@ void *user_handler(void *arguments)
                             
                             if(check_session(&head, &connected_user, atoi(session_key_temp)))
                             {
-                                logout(&connected_user);
-                                break;
+                                inchat(&connected_user, user->client_ip, buffer_protocol[1], buffer_protocol[2], username_in_session, buffer_protocol[4], buffer_protocol[5] );
                             }
                             else
                             {
@@ -1687,15 +1673,48 @@ void *user_handler(void *arguments)
                             }
                         }
                         else
-                        {
-                            char error_message[MAX_STRING] = "";
-                            format_message(error_message, "HOME", "ERROR", "0", "0", "NULL", "NULL");
-                            send_data(connected_user.socket,error_message);
-                            //error = 1;
-                        }
-        show_online_users(&head);
-        clear_buffer_protocol(buffer_protocol);
-        memset(&input[0], 0, sizeof(input));
+                            if(strcmp(buffer_protocol[0], "LOGOUT") == 0)
+                            {
+                                char *temp_sender;
+                                temp_sender = strtok (buffer_protocol[3], ":");
+                                strcpy(username_in_session, temp_sender);
+                                while (temp_sender != NULL)
+                                {
+                                    temp_sender = strtok (NULL, ":");
+                                    strcpy(session_key_temp, temp_sender);
+                                    break;
+                                }
+                                
+                                if(check_session(&head, &connected_user, atoi(session_key_temp)))
+                                {
+                                    logout(&connected_user);
+                                    break;
+                                }
+                                else
+                                {
+                                    printf("Intruder Detected!!!");
+                                    char error_message[MAX_STRING] = "";
+                                    format_message(error_message, "HOME", "ERROR", "0", "0", "NULL", "NULL");
+                                    send_data(connected_user.socket,error_message);
+                                }
+                            }
+                            else
+                            {
+                                char error_message[MAX_STRING] = "";
+                                format_message(error_message, "HOME", "ERROR", "0", "0", "NULL", "NULL");
+                                send_data(connected_user.socket,error_message);
+                                //error = 1;
+                            }
+            show_online_users(&head);
+            clear_buffer_protocol(buffer_protocol);
+            memset(&input[0], 0, sizeof(input));
+        }
+        else
+        {
+            char error_message[MAX_STRING] = "";
+            format_message(error_message, "HOME", "ERROR", "0", "0", "NULL", "NULL");
+            send_data(connected_user.socket,error_message);
+        }
     }
     
     if(read_size == 0 || exchange_fail == 1)
