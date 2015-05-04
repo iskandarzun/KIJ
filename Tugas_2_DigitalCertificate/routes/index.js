@@ -82,6 +82,13 @@ router.get('/create_cert' ,function(req, res, next) {
   res.render('create_cert');
 });
 
+// GET form in page 
+router.get('/form' ,function(req, res, next) {
+  res.render('form');
+});
+
+//GET registration in page
+
 /*
 router.post('/authenticate',passport.authenticate('local', { successRedirect: '/dashboard',
 	failureRedirect: '/login'})
