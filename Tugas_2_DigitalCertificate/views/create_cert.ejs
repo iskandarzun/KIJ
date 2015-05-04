@@ -48,7 +48,6 @@
 
 <body>
 
-<div ng-view>
     <div id="wrapper">
 
         <!-- Navigation -->
@@ -195,43 +194,50 @@
 
         <!-- page-wrapper -->
         <div id="page-wrapper">
-        	<div ng-view>
+        	<div>
             	<div class="row">
             	<div class="col-lg-12">
-            	<h1 class="page-header">Create New Certificate</h1>
+            	<h1 class="page-header">Create New SSL Certificate</h1>
+                <h4 style="color:#0174DF">Step 1: Provide Your CSR</h4>
+                <p>
+                You must generate a Certificate Signing Request (CSR) on your webserver. When you have created your CSR you may continue with the enrollment.
 
+                After you have generated a CSR using your server software copy and paste the CSR text using an ASCII text editor into the CSR box below.
+                </p>
             	<form>
             		<div class="form-group">
-            			<h4>Certificate Name</h4>
-            			<input class="form-control">
-                        <p class="help-block">The name of your new certificate.</p>
+            			<h4>Your CSR</h4>
+            			<textarea name="csr" cols="100" rows="10" wraps="off" required></textarea>
             		</div>
             		<div class="form-group">
-            			<h4>Website URL</h4>
-            			<input class="form-control">
-                        <p class="help-block">The url to your website.</p>
+            			<h4>Server Software Used to Generate the CSR</h4>
+            			<select class="form-control">
+                            <option value="0">-- Select from list --</option>
+                            <option value="1">Apache-ModSSL</option>
+                            <option value="2">Java Web Server (Javasoft / Sun)</option>
+                            <option value="3">nginx</option>
+                            <option value="4">Oracle</option>
+                            <option value="5">Red Hat Linux</option>
+                            <option value="6">Tomcat</option>
+                            <option value="1">OTHER</option>
+                        </select>
             		</div>
             		<div class="form-group">
-                        <h4>Type of Certificate</h4>
+                        <h4>Select Hash Algorithm</h4>
                         <select class="form-control">
-                        	<option>Domain Validation</option>
-                        	<option>Organization Validation</option>
-                        	<option>Extended Validation</option>                        	
+                            <option value="1">No preference</option>
+                            <option value="2">SHA-1</option>
+                            <option value="3">SHA-2</option>
                         </select>
                     </div>
-                    <a class="btn btn-default" href="dashboard.html">
-                            Back to previous page
-                        </a>
-                    <div class="btn-group">
-                        
-                        <a class="btn btn-default" href="#">
-                            Next
-                        </a>
-
-                    </div>
+                    <a class="btn btn-default" href="dashboard">
+                        Back to previous page
+                    </a>
+                    <button class="btn btn-default" type="submit">Next</button>
             	</form>
             	</div>
             	</div>
+                <br>
         	</div> <!--end ng-view-->
        </div>  <!-- end page-wrapper -->
     </div>    <!--end wrapper-->

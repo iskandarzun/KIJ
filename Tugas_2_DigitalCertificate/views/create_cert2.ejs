@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Dashboard - CertiTrust</title>
+    <title>CertiTrust - Create Certificate</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="public/css/bootstrap.min.css" rel="stylesheet">
@@ -194,42 +194,29 @@
 
         <!-- page-wrapper -->
         <div id="page-wrapper">
-        	
-            	<div class="row">
+            <div>
+                <div class="row">
                 <div class="col-lg-12">
-                    <h1 class="page-header">Certificate</h1>
-                    <div class="row">
-                    <div class="col-lg-8">
-                        <div class="panel panel-default w90">
-                            <div class="panel-heading">
-                                Create New SSL Certificate
-                                <div class="pull-right">
-                                    <div class="btn-group">
-                                        <a class="btn btn-default btn-xs" href="create_cert.html">
-                                            <i class="fa fa-plus"></i>Create
-                                        </a>
-            					    </div>
-                                </div>
-                            </div>
-                        </div>
+                <h1 class="page-header">Create New SSL Certificate</h1>
+                <h4 style="color:#0174DF">Step 2: Domain Control Validation ( part 1 )</h4>
+                <p>
+                We need to validate that you, the applicant, have control of the domain for which the certificate is being requested. To achieve this, you MUST be able to receive a domain control validation email sent to an approved email address (enter your valid email address). This email will contain a secret "validation code" that you will need to paste into a webpage before your certificate will be issued.
+                </p>
+                <form>
+                    <div class="form-group">
+                        <h4>Your Email Address</h4>
+                        <input class="form-control" name="email" type="email" required>
                     </div>
-                    </div>
-                    <!--If Ada Certificate-->
                     
-                        <ul class="list-unstyled">
-                            <li>
-                                <div class="repostyle"><p>[Certificate's Name]</p></div>
-                                <div class="btn-group">
-                                        <a class="btn btn-default btn-xs" href="addrepo">
-                                            Settings
-                                        </a>
-                                </div>
-                            </li>                                  
-                        </ul>
-                    
+                    <a class="btn btn-default" href="create_cert">
+                        Back to previous page
+                    </a>
+                    <button class="btn btn-default" type="submit">Next</button>
+                </form>
                 </div>
-                </div>     
-        	
+                </div>
+                <br>
+            </div> <!--end ng-view-->
        </div>  <!-- end page-wrapper -->
     </div>    <!--end wrapper-->
 
