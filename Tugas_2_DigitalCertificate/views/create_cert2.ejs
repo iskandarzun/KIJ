@@ -202,7 +202,7 @@
                 <p>
                 We need to validate that you, the applicant, have control of the domain for which the certificate is being requested. To achieve this, you MUST be able to receive a domain control validation email sent to an approved email address (enter your valid email address). This email will contain a secret "validation code" that you will need to paste into a webpage before your certificate will be issued.
                 </p>
-                <form>
+                <form method='post' action='/create_cert?page=page3'>
                     <div class="form-group">
                         <h4>Your Email Address</h4>
                         <input class="form-control" name="email" type="email" required>
