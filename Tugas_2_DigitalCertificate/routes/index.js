@@ -114,6 +114,10 @@ router.get('/form' ,function(req, res, next) {
 });
 
 
+// GET list_cert in page
+router.get('/list_cert', function(req, res, next){
+  res.render('list_cert');
+});
 
 // POST create_cert in page
 router.post('/create_cert', function(req, res, next) {
@@ -135,11 +139,6 @@ router.post('/create_cert', function(req, res, next) {
   {
     res.render('create_cert');
   }
-});
-
-// GET list_cert in page
-router.get('/list_cert', function(req, res, next){
-  res.render('list_cert');
 });
 
 //GET registration in page
