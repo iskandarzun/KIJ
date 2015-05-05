@@ -113,12 +113,6 @@ router.get('/form' ,function(req, res, next) {
   res.render('form');
 });
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> 9b85bfd
-
 // GET list_cert in page
 router.get('/list_cert', function(req, res, next){
   res.render('list_cert');
@@ -146,12 +140,6 @@ router.post('/create_cert', function(req, res, next) {
   }
 });
 
-//GET registration in page
-
-<<<<<<< HEAD
->>>>>>> 9b85bfd... Fixing routes/index.js
-=======
->>>>>>> 9b85bfd
 /*
 router.post('/authenticate',passport.authenticate('local', { successRedirect: '/dashboard',
 	failureRedirect: '/login'})
