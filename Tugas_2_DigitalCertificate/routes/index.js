@@ -82,6 +82,39 @@ router.get('/create_cert' ,function(req, res, next) {
   res.render('create_cert');
 });
 
+<<<<<<< HEAD
+=======
+
+// GET list_cert in page
+router.get('/list_cert', function(req, res, next){
+  res.render('list_cert');
+});
+
+// POST create_cert in page
+router.post('/create_cert', function(req, res, next) {
+  if(req.query.page == 'page1')
+  {
+    res.render('create_cert');
+  }
+  else
+  if(req.query.page == 'page2')
+  {
+    res.render('create_cert2');
+  }
+  else
+  if(req.query.page == 'page3')
+  {
+    res.render('create_cert3');
+  }
+  else
+  {
+    res.render('create_cert');
+  }
+});
+
+//GET registration in page
+
+>>>>>>> 9b85bfd... Fixing routes/index.js
 /*
 router.post('/authenticate',passport.authenticate('local', { successRedirect: '/dashboard',
 	failureRedirect: '/login'})
