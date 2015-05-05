@@ -81,6 +81,11 @@ router.get('/dashboard' ,function(req, res, next) {
   res.render('dashboard');
 });
 
+// GET dashboard in page 
+router.get('/dashboardadmin' ,function(req, res, next) {
+  res.render('dashboardadmin');
+});
+
 // GET create_cert in page 
 router.get('/create_cert' ,function(req, res, next) {
   if(req.query.page == 'page1')
@@ -107,6 +112,8 @@ router.get('/create_cert' ,function(req, res, next) {
 router.get('/form' ,function(req, res, next) {
   res.render('form');
 });
+
+
 
 // POST create_cert in page
 router.post('/create_cert', function(req, res, next) {
