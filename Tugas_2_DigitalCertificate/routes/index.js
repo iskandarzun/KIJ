@@ -61,6 +61,16 @@ router.get('/', function(req, res, next) {
   res.render('index');
 });
 
+// GET about page
+router.get('/about', function(req, res, next) {
+  res.render('about');
+});
+
+// GET feature page
+router.get('/feature', function(req, res, next) {
+  res.render('feature');
+});
+
 // GET register page
 router.get('/register', function(req, res, next) {
   res.render('register');
