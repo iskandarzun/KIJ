@@ -76,6 +76,16 @@ router.get('/register', function(req, res, next) {
   res.render('register');
 });
 
+// GET about page
+router.get('/about', function(req, res, next) {
+  res.render('about');
+});
+
+// GET feature page
+router.get('/feature', function(req, res, next) {
+  res.render('feature');
+});
+
 // GET login page
 router.get('/login_page', function(req, res, next) {
   res.render('login_page');
