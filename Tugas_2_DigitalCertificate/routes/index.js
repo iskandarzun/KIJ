@@ -71,6 +71,10 @@ router.get('/login_page', function(req, res, next) {
   res.render('login_page');
 });
 
+// GET admin dashboard in page
+router.get('/dashboardadmin' ,function(req, res, next) {
+  res.render('dashboardadmin');
+});
 
 // GET dashboard in page 
 router.get('/dashboard' ,function(req, res, next) {
