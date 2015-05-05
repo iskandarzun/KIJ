@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Dashboard - CertiTrust</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="public/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Timeline CSS -->
+    <link href="public/css/timeline.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="public/css/sb-admin-2.css" rel="stylesheet">
+
+    <!-- Custom Fonts -->
+    <link href="public/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+    <link href="public/css/jquery.selectbox.css" type="text/css" rel="stylesheet" />
+
+    <!-- Angular -->
+    <script src="public/js/angular.min.js"></script>
+    <script src="public/js/play_stop.js"></script>
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+
+    <!-- jQuery -->
+    <script src="public/js/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="public/js/bootstrap.min.js"></script>
+
+    <!-- Custom Theme JavaScript -->
+    <script src="public/js/sb-admin-2.js"></script>    
+</head>
+
+<body>
+
+    <div id="wrapper">
+
+        <!-- Navigation -->
+        <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="index.html">CertiTrust</a>
+            </div>
+            <!-- /.navbar-header -->
+
+            <ul class="nav navbar-top-links navbar-right">
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                        <i class="fa fa-envelope fa-fw"></i>  <i class="fa fa-caret-down"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-messages">
+                        <li>
+                            <a href="#">
+                                <div>
+                                    <strong>[Name]</strong>
+                                    <span class="pull-right text-muted">
+                                        <em>[when]</em>
+                                    </span>
+                                </div>
+                                <div>[What]</div>
+                            </a>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <a href="#">
+                                <div>
+                                    <strong>[Name]</strong>
+                                    <span class="pull-right text-muted">
+                                        <em>[When]</em>
+                                    </span>
+                                </div>
+                                <div>[What]</div>
+                            </a>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <a class="text-center" href="#">
+                                <strong>Read All Messages</strong>
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                    <!-- /.dropdown-messages -->
+                </li>
+
+                <!-- /.dropdown -->
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                        <i class="fa fa-bell fa-fw"></i>  <i class="fa fa-caret-down"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-alerts">
+                        <li>
+                            <a href="#">
+                                <div>
+                                    New Notif
+                                    <span class="pull-right text-muted small">4 minutes ago</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <a href="#">
+                                <div>
+                                    New Notif
+                                    <span class="pull-right text-muted small">4 minutes ago</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <a class="text-center" href="#">
+                                <strong>See All Notifications</strong>
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                    <!-- /.dropdown-alerts -->
+                </li>
+                <!-- /.dropdown -->
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                        <i class="fa fa-user fa-fw"></i>  <i class="fa fa-caret-down"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-user">
+                        <li><a href="#"><i class="fa fa-user fa-fw"></i> User Profile</a>
+                        </li>
+                        <li><a href="#"><i class="fa fa-gear fa-fw"></i> Settings</a>
+                        </li>
+                        <li class="divider"></li>
+                        <li><a href="login.html"><i class="fa fa-sign-out fa-fw"></i> Logout</a>
+                        </li>
+                    </ul>
+                    <!-- /.dropdown-user -->
+                </li>
+                <!-- /.dropdown -->
+            </ul>
+            <!-- /.navbar-top-links -->
+
+            <div class="navbar-default sidebar" role="navigation">
+                <div class="sidebar-nav navbar-collapse">
+                    <ul class="nav" id="side-menu">
+                        <li class="sidebar-search">
+                            <div class="input-group custom-search-form">
+                                <input type="text" class="form-control" placeholder="Search...">
+                                <span class="input-group-btn">
+                                <button class="btn btn-default" type="button">
+                                    <i class="fa fa-search"></i>
+                                </button>
+                            </span>
+                            </div>
+                            <!-- /input-group -->
+                        </li>
+                        <li>
+                            <a href="index.html"><i class="fa fa-dashboard fa-fw"></i>Member List</a>
+                        </li>
+                        <li>
+                            <a href="#"><i class="fa fa-bar-chart-o fa-fw"></i> Balance <span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a href="#">Current Balance</a>
+                                </li>
+                                <li>
+                                    <a href="#">Charge</a>
+                                </li>
+                            </ul>
+                            <!-- /.nav-second-level -->
+                        </li>                                             
+                    </ul>
+                </div>
+                <!-- /.sidebar-collapse -->
+            </div>
+            <!-- /.navbar-static-side -->
+        </nav>
+
+        <!-- page-wrapper -->
+        <div id="page-wrapper">
+            	<div class="row">
+                <div class="col-lg-12">
+                    <h1 class="page-header">Member List</h1>
+					
+					<div class="col-sm-9">
+						<div class="list-group">
+		                    <a class="list-group-item" data-toggle="collapse" data-target="#data1">I Gede Arya Putra Perdana</a>
+		                        <div class="collapse" id="data1">
+						        	<div>
+						        		<table>
+							        		<tr>
+									        	<td style="padding:5px;">
+								        			<table>
+								        			<tr>
+								        				<h4><strong>Organization Details</strong></h4>
+														<h4>Organization Name</h4>
+														<p>Arya Corporation</p>
+														<h4>Address</h4>
+														<p>Jalan feels</p>
+														<h4>City</h4>
+														<p>Surabaya</p>
+														<h4>State/Province/Region</h4>
+														<p>Sukolilo</p>
+														<h4>Zip/Postal Code</h4>
+														<p>12345</p>
+														<h4>Country</h4>
+														<p>Indonesia</p>
+
+														<br>
+														<h4><strong>Organization Contact Person</strong></h4>
+														<h4>Job Title</h4>
+														<p>KIJ</p>
+														<h4>First Name</h4>
+														<p>Arya</p>
+														<h4>Last Name</h4>
+														<p>Shinji</p>
+														<h4>Contact Email</h4>
+														<p>aryashinji@gmail.com</p>
+														<h4>Contact telephone</h4>
+														<p>0361463411</p>
+
+														<br>
+														<h4><strong>Account Details</strong></h4>
+														<h4>Username</h4>
+														<p>AryaGanteng</p>
+														<h4>Company Type</h4>
+														<p>Pokoknya ganteng</p>
+											        </tr>
+											        <tr>
+											        	<button type="button" class="btn btn-lg btn-danger">Hapus</button>&nbsp
+									        			<button type="button" class="btn btn-lg btn-primary">Edit</button>&nbsp
+														<a href="list_cert"><button type="button" class="btn btn-lg btn-default">Certificate List</a>
+								        			</tr>
+								        			</table>
+									        	</td>
+								        	</tr>
+							        	</table>
+						        	</div>
+		                        </div>
+		                    </a>
+						</div>
+					</div>
+
+                    <!--
+					<div class="col-sm-9">
+						<div class="list-group">
+		                    <a class="list-group-item" data-toggle="collapse" data-target="#data2">I Gede Arya Putra Perdana</a>
+		                        <div class="collapse" id="data2">
+						        	<div>
+						        		<table>
+							        		<tr>
+									        	<td style="padding:5px;">
+								        			<table>
+								        			<tr>
+														<fieldset disabled>
+								        				<form class="register_form style-1">
+														<h4><strong>Organization Details</strong></h4>
+														<hr>
+														<h4>Organization Name</h4>
+														<input class="reg_field" type="text" name="org_name">
+														<h4>Address</h4>
+														<input class="reg_field" type="text" name="org_address">
+														<h4>City</h4>
+														<input class="reg_field" type="text" name="org_city">
+														<h4>State/Province/Region</h4>
+														<input class="reg_field" type="text" name="org_state">
+														<h4>Zip/Postal Code</h4>
+														<input class="reg_field" type="text" name="org_zip">
+														<h4>Country</h4>
+														<input class="reg_field" type="text" name="org_country">
+
+														<br><br>
+														<h4><strong>Organization Contact Person</strong></h4>
+														<hr>
+														<h4>Job Title</h4>
+														<input class="reg_field" type="text" name="cp_job">
+														<h4>First Name</h4>
+														<input class="reg_field" type="text" name="cp_fname">
+														<h4>Last Name</h4>
+														<input class="reg_field" type="text" name="cp_lname">
+														<h4>Contact Email</h4>
+														<input class="reg_field" type="text" name="cp_email">
+														<h4>Contact telephone</h4>
+														<input class="reg_field" type="text" name="cp_telephone">
+
+														<br><br>
+														<h4><strong>Account Details</strong></h4>
+														<hr>
+														<h4>Username</h4>
+														<input class="reg_field" type="text" name="username">
+														<h4>Password</h4>
+														<input class="reg_field" type="password" name="password">
+														<h4>Confirm Password</h4>
+														<input class="reg_field" type="password" name="con_password">
+														<h4>Company Type</h4>
+														<select>
+														  <option value="1">Hosting Company/ISP</option>
+														  <option value="2">System Integrator/MSP</option>
+														  <option value="3">IT Consultant</option>
+														  <option value="4">Software Vendor/Developer</option>
+														  <option value="5">Individual</option>
+														  <option value="6">Affiliate</option>
+														  <option value="7">Other</option>
+														</select>
+
+														<br><br>
+													  </form>
+													  </fieldset>
+											        </tr>
+											        <tr>
+											        	<button type="button" class="btn btn-lg btn-danger">Hapus</button>
+									        			<button type="button" class="btn btn-lg btn-primary">Edit</button>
+														<a href="create_cert.html"><button type="button" class="btn btn-lg btn-default">Create</a>
+								        			</tr>
+								        			</table>
+									        	</td>
+								        	</tr>
+							        	</table>
+						        	</div>
+		                        </div>
+		                    </a>
+						</div>
+					</div>
+                    -->
+
+                    
+                </div>
+                </div>     
+        	
+       </div>  <!-- end page-wrapper -->
+    </div>    <!--end wrapper-->
+
+</body>
+
+</html>

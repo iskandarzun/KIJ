@@ -71,19 +71,53 @@ router.get('/login_page', function(req, res, next) {
   res.render('login_page');
 });
 
+// GET admin dashboard in page
+router.get('/dashboardadmin' ,function(req, res, next) {
+  res.render('dashboardadmin');
+});
 
 // GET dashboard in page 
 router.get('/dashboard' ,function(req, res, next) {
   res.render('dashboard');
 });
 
+// GET dashboard in page 
+router.get('/dashboardadmin' ,function(req, res, next) {
+  res.render('dashboardadmin');
+});
+
 // GET create_cert in page 
 router.get('/create_cert' ,function(req, res, next) {
-  res.render('create_cert');
+  if(req.query.page == 'page1')
+  {
+    res.render('create_cert');
+  }
+  else
+  if(req.query.page == 'page2')
+  {
+    res.render('create_cert2');
+  }
+  else
+  if(req.query.page == 'page3')
+  {
+    res.render('create_cert3');
+  }
+  else
+  {
+    res.render('create_cert');
+  }
+});
+
+// GET form in page 
+router.get('/form' ,function(req, res, next) {
+  res.render('form');
 });
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 9b85bfd
 
 // GET list_cert in page
 router.get('/list_cert', function(req, res, next){
@@ -114,7 +148,10 @@ router.post('/create_cert', function(req, res, next) {
 
 //GET registration in page
 
+<<<<<<< HEAD
 >>>>>>> 9b85bfd... Fixing routes/index.js
+=======
+>>>>>>> 9b85bfd
 /*
 router.post('/authenticate',passport.authenticate('local', { successRedirect: '/dashboard',
 	failureRedirect: '/login'})
