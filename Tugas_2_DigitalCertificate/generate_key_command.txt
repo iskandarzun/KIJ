@@ -1,0 +1,5 @@
+ #Generate RSA-2048 Private Key
+ openssl genrsa -out ./file_name.key 2048
+
+ #Generate CSR SHA-256 with private key file_name.key 
+ openssl req -new -sha256 -key ./file_name.key -out ./file_csr_name.csr
