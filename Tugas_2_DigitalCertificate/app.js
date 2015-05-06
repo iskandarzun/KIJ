@@ -7,14 +7,15 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var flash = require('connect-flash');
 var port = 9000;
 var https_port = 9443;
 
 var routes = require('./routes/index');
 //var users = require('./routes/users');
 
-//var mongoose = require('mongoose');
-//mongoose.connect('mongodb://localhost/xxx');
+var mongoose = require('mongoose');
+mongoose.connect('mongodb://localhost/certitrust');
 
 pem.createCertificate({days: 1, selfSigned: true}, function(err, keys) {
       var app = express();
@@ -22,6 +23,7 @@ pem.createCertificate({days: 1, selfSigned: true}, function(err, keys) {
       app.set('views', path.join(__dirname, 'views'));
       app.set('view engine', 'ejs');
       app.use('/public', express.static('public'));
+      app.use(flash());
 
       // uncomment after placing your favicon in /public
       //app.use(favicon(__dirname + '/public/favicon.ico'));

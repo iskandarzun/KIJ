@@ -1,26 +1,26 @@
 var express = require('express')();
 var router = express;//express.Router();
-//var mongoose = require('mongoose');
+var mongoose = require('mongoose');
+var flash = require('connect-flash');
 
 var session = require('express-session');
 var passport = require('passport'),
     LocalStrategy = require('passport-local').Strategy;
 
-//var User = require('../models/user');
-//var Node = require('../models/node');
-//var Usage = require('../models/usage');
+var User = require('../models/users');
+var Cert = require('../models/cert');
 
 express.use(session({secret: 'secretdude', saveUninitialized: true,
                  resave: true}));
 express.use(passport.initialize());
 express.use(passport.session());
+express.use(flash());
 
-/*
 passport.use(new LocalStrategy({
-    usernameField: 'uname',
-    passwordField: 'passwd'
+    usernameField: 'username',
+    passwordField: 'password'
   },function(username, password, done) {
-  	User.findOne({username : username, password : password},function(err, user){
+  	User.findOne({username : username, password : password}, function(err, user){
   		if(user){
 			done(null, user);
 		}
@@ -39,6 +39,15 @@ passport.deserializeUser(function(id, done) {
   });
 });
 
+/*
+User.findOne({username: "feeljay"}, function(err, user){
+      if(user){
+      console.log('user : %s', user.password);
+    }
+      else
+        console.log('nope');
+  });
+*/
 // called in number 2 argument get
 // registration using another function without passport
 var authentication = function(req, res, done) 
@@ -50,44 +59,52 @@ var authentication = function(req, res, done)
   }
   else
   {
-  	res.redirect('/login');
+  	res.redirect('/login_page');
+    req.flash();
     // redirect to error page ex -> res.redirect('error page');
   }
 }
-*/
+
+var in_session = function(req, res, done) 
+{
+  if(req.isAuthenticated())
+  {
+    res.redirect('/dashboard');
+  }
+  else
+  {
+    done();
+  }
+}
+
 
 // GET index page
-router.get('/', function(req, res, next) {
+router.get('/', in_session, function(req, res, next) {
   res.render('index');
 });
 
 // GET about page
-router.get('/about', function(req, res, next) {
+router.get('/about', in_session, function(req, res, next) {
   res.render('about');
 });
 
 // GET feature page
-router.get('/feature', function(req, res, next) {
+router.get('/feature', in_session, function(req, res, next) {
   res.render('feature');
 });
 
 // GET register page
-router.get('/register', function(req, res, next) {
+router.get('/register', in_session, function(req, res, next) {
   res.render('register');
 });
 
 // GET about page
-router.get('/about', function(req, res, next) {
+router.get('/about', in_session, function(req, res, next) {
   res.render('about');
 });
 
-// GET feature page
-router.get('/feature', function(req, res, next) {
-  res.render('feature');
-});
-
 // GET login page
-router.get('/login_page', function(req, res, next) {
+router.get('/login_page', in_session, function(req, res, next) {
   res.render('login_page');
 });
 
@@ -97,7 +114,7 @@ router.get('/dashboardadmin' ,function(req, res, next) {
 });
 
 // GET dashboard in page 
-router.get('/dashboard' ,function(req, res, next) {
+router.get('/dashboard', authentication ,function(req, res, next) {
   res.render('dashboard');
 });
 
@@ -107,7 +124,7 @@ router.get('/dashboardadmin' ,function(req, res, next) {
 });
 
 // GET create_cert in page 
-router.get('/create_cert' ,function(req, res, next) {
+router.get('/create_cert', authentication, function(req, res, next) {
   if(req.query.page == 'page1')
   {
     res.render('create_cert');
@@ -138,8 +155,20 @@ router.get('/list_cert', function(req, res, next){
   res.render('list_cert');
 });
 
+// GET logout in page
+router.get('/logout', function(req, res, next) {
+  req.logout();
+  res.redirect('/');
+});
+
+//POST authenticate in page
+router.post('/authenticate', passport.authenticate('local', { successRedirect: '/dashboard',
+  failureRedirect: '/login_page', 
+  failureFlash: "Invalid username or password"})
+);
+
 // POST create_cert in page
-router.post('/create_cert', function(req, res, next) {
+router.post('/create_cert', authentication, function(req, res, next) {
   if(req.query.page == 'page1')
   {
     res.render('create_cert');

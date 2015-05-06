@@ -6,4 +6,4 @@ var certSchema = new Schema({
 	user : Schema.ObjectId
 });
 
-mongoose.model('cert', certSchema);
+module.exports = mongoose.model('Cert', certSchema);

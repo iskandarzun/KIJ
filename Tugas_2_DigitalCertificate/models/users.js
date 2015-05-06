@@ -21,4 +21,4 @@ var usersSchema = new Schema({
 	companyType : String
 });
 
-mongoose.model('users', usersSchema);
+module.exports = mongoose.model('User', usersSchema);
