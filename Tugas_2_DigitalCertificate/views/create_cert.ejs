@@ -209,58 +209,18 @@
             			<h4>Your CSR</h4>
             			<textarea name="csr" cols="100" rows="10" wraps="off" required></textarea>
             		</div>
-                        <div class="list-group">
-                            <a class="list-group" data-toggle="collapse" data-target="#data1">Don't know how to create CSR? click me !</a>
-                                <div class="collapse" id="data1">
-                                    <div class="col-lg-12">
-                                        <div class="col-lg-10">
-                                            <form class="form-group">
-                                            <h4><strong>Fill this form first</strong></h4>
-                                            <hr>
-                                            <h4>Common Name</h4>
-                                            <input class="form-control" type="text" name="org_name">
-                                            <h4>Organization</h4>
-                                            <input class="form-control" type="text" name="org_organization">
-                                            <h4>Department</h4>
-                                            <input class="form-control" type="text" name="org_department">
-                                            <h4>City</h4>
-                                            <input class="form-control" type="text" name="org_city">
-                                            <h4>State / Province</h4>
-                                            <input class="form-control" type="text" name="org_state">
-                                            <h4>Country</h4>
-                                            <input class="form-control" type="text" name="org_country">
-                                            <h4>Key Size</h4>
-                                            <select>
-                                              <option value="1">RSA 2048 (recommended)</option>
-                                              <option value="2">RSA 4096</option>
-                                              <option value="3">P-256 (elliptic curve)</option>
-                                            </select>
-                                            <br><br>
-                                          </form>
-                                            
-                                            <button type="button" class="btn btn-lg btn-primary">Create Command</button>&nbsp
-                                        </tr>
-                                        <br><br>
-                                        <p>Copy paste this command into terminal. Be sure you have installed open SSL.</p>
-                                        <textarea id="csr" class="form-control"></textarea>
-                                        <br>
-                                    </div>
-                                </div>
-                                <a data-toggle="collapse" href="#data1">Close</a>
-                            </div>
-                            </a>
-                        </div>
+                        
             		<div class="form-group">
             			<h4>Server Software Used to Generate the CSR</h4>
             			<select name="server_software" class="form-control">
                             <option value="0">-- Select from list --</option>
-                            <option value="1">Apache-ModSSL</option>
-                            <option value="2">Java Web Server (Javasoft / Sun)</option>
-                            <option value="3">nginx</option>
-                            <option value="4">Oracle</option>
-                            <option value="5">Red Hat Linux</option>
-                            <option value="6">Tomcat</option>
-                            <option value="1">OTHER</option>
+                            <option value="Apache-ModSSL">Apache-ModSSL</option>
+                            <option value="Java Web Server">Java Web Server (Javasoft / Sun)</option>
+                            <option value="Nginx">nginx</option>
+                            <option value="Oracle">Oracle</option>
+                            <option value="Red Hat Linux">Red Hat Linux</option>
+                            <option value="Tomcat">Tomcat</option>
+                            <option value="other">OTHER</option>
                         </select>
             		</div>
             		<div class="form-group">

@@ -77,30 +77,12 @@
               <div class="wrap-col">
                     <h2>CertiTrust Registration</h2>
                     <p>
-                    At DigiCert we are proud to collaborate with any of our customers or partners. We love to share our top-shelf certificates and award-winning customer support with your customers and prospects. Regardless of whether you wish to pass along occasional referrals or plan to have an integrated program for your clients where you order and maintain SSL Certificates on their behalf we have programs to fit your needs.
+                    At CertiTrust we are proud to collaborate with any of our customers or partners. We love to share our top-shelf certificates and award-winning customer support with your customers and prospects. Regardless of whether you wish to pass along occasional referrals or plan to have an integrated program for your clients where you order and maintain SSL Certificates on their behalf we have programs to fit your needs.
                     </p>
                     <section id="content">
-                      <form class="register_form style-1">
-                        <h3><strong>Organization Details</strong></h3>
-                        <hr>
-                        <h3>Organization Name</h3>
-                        <input class="reg_field" type="text" name="org_name">
-                        <h3>Address</h3>
-                        <input class="reg_field" type="text" name="org_address">
-                        <h3>City</h3>
-                        <input class="reg_field" type="text" name="org_city">
-                        <h3>State/Province/Region</h3>
-                        <input class="reg_field" type="text" name="org_state">
-                        <h3>Zip/Postal Code</h3>
-                        <input class="reg_field" type="text" name="org_zip">
-                        <h3>Country</h3>
-                        <input class="reg_field" type="text" name="org_country">
-
-                        <br><br>
+                      <form class="register_form style-1" method="post" action="/register">
                         <h3><strong>Organization Contact Person</strong></h3>
                         <hr>
-                        <h3>Job Title</h3>
-                        <input class="reg_field" type="text" name="cp_job">
                         <h3>First Name</h3>
                         <input class="reg_field" type="text" name="cp_fname">
                         <h3>Last Name</h3>
@@ -120,14 +102,14 @@
                         <h3>Confirm Password</h3>
                         <input class="reg_field" type="password" name="con_password">
                         <h3>Company Type</h3>
-                        <select>
-                          <option value="1">Hosting Company/ISP</option>
-                          <option value="2">System Integrator/MSP</option>
-                          <option value="3">IT Consultant</option>
-                          <option value="4">Software Vendor/Developer</option>
-                          <option value="5">Individual</option>
-                          <option value="6">Affiliate</option>
-                          <option value="7">Other</option>
+                        <select name="company">
+                          <option value="ISP">Hosting Company/ISP</option>
+                          <option value="MSP">System Integrator/MSP</option>
+                          <option value="IT Consultant">IT Consultant</option>
+                          <option value="Developer">Software Vendor/Developer</option>
+                          <option value="Individual">Individual</option>
+                          <option value="Affiliate">Affiliate</option>
+                          <option value="Other">Other</option>
                         </select>
 
                         <br><br>

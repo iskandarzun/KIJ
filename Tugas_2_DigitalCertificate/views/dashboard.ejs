@@ -199,18 +199,23 @@
                     </div>
                     </div>
                     <!--If Ada Certificate-->
-                    
+                    <% for(var i = 0; i < listdir.length; i++) {%>
                         <ul class="list-unstyled">
                             <li>
-                                <div class="repostyle"><p>[Certificate's Name]</p></div>
+                                <div class="repostyle"><p><%=listdir[i]%></p></div>
                                 <div class="btn-group">
-                                        <a class="btn btn-default btn-xs" href="addrepo">
-                                            Settings
+                                        <a class="btn btn-default btn-xs" href="/download?name=<%=listdir[i] %> ">
+                                            Download
+                                        </a>
+                                </div>
+                                <div class="btn-group">
+                                        <a class="btn btn-default btn-xs" href="/remove?name=<%=listdir[i] %> ">
+                                            Remove
                                         </a>
                                 </div>
                             </li>                                  
                         </ul>
-                    
+                    <% } %>
                 </div>
                 </div>     
         	

@@ -2,6 +2,8 @@ var express = require('express')();
 var router = express;//express.Router();
 var mongoose = require('mongoose');
 var flash = require('connect-flash');
+var pem = require('pem');
+var fs = require('fs');
 
 var session = require('express-session');
 var passport = require('passport'),
@@ -115,7 +117,8 @@ router.get('/dashboardadmin' ,function(req, res, next) {
 
 // GET dashboard in page 
 router.get('/dashboard', authentication ,function(req, res, next) {
-  res.render('dashboard');
+  var listdir = fs.readdirSync('./public/users/' + req.user.username + "/");
+  res.render('dashboard', {listdir: listdir});
 });
 
 // GET dashboard in page 
@@ -145,6 +148,25 @@ router.get('/create_cert', authentication, function(req, res, next) {
   }
 });
 
+// GET download in page 
+router.get('/download', authentication, function(req, res, next) {
+  var file = './public/users/' + req.user.username + '/' + req.query.name; 
+  res.download(file);
+});
+
+// GET download in page 
+router.get('/remove', authentication, function(req, res, next) {
+  var file = './public/users/' + req.user.username + '/' + req.query.name; 
+  fs.unlink(file);
+  res.redirect('/dashboard');
+});
+
+// GET ca_cert in page 
+router.get('/ca_cert', in_session, function(req, res, next) {
+  var file = './ca.crt'; 
+  res.download(file);
+});
+
 // GET form in page 
 router.get('/form' ,function(req, res, next) {
   res.render('form');
@@ -167,63 +189,81 @@ router.post('/authenticate', passport.authenticate('local', { successRedirect: '
   failureFlash: "Invalid username or password"})
 );
 
+// POST register_user in page
+router.post('/register', in_session ,function(req, res, next) {
+  if(req.body.password == req.body.con_password)
+  {
+    var user = User({
+      firstName: req.body.cp_fname,
+      lastName: req.body.cp_lname,
+      contactEmail: req.body.cp_email,
+      contactTelp: req.body.cp_telephone,
+
+      username: req.body.username,
+      password: req.body.password,
+      companyType: req.body.company
+    })
+    user.save();
+    if (!fs.existsSync("./public/users/" + req.body.username)){
+    fs.mkdirSync("./public/users/" + req.body.username);}
+    res.redirect('/login_page');
+  }
+  else
+  {
+    res.redirect('/register');
+  }
+})
+
 // POST create_cert in page
 router.post('/create_cert', authentication, function(req, res, next) {
   if(req.query.page == 'page1')
   {
+    req.session.destroy();
     res.render('create_cert');
   }
   else
   if(req.query.page == 'page2')
   {
+    req.session.csr = req.body.csr;
+    req.session.server_software = req.body.server_software;
+    req.session.hash_algorithm = req.body.hash_algorithm;
     res.render('create_cert2');
   }
   else
   if(req.query.page == 'page3')
   {
+    req.session.email = req.body.email;
     res.render('create_cert3');
   }
   else
   {
+    req.session.destroy();
     res.render('create_cert');
   }
 });
 
-/*
-router.post('/authenticate',passport.authenticate('local', { successRedirect: '/dashboard',
-	failureRedirect: '/login'})
-);
-
-router.post('/register', function(req,res){
-	var user = User({
-		firstname : req.body.firstname,
-		lastname  : req.body.lastname,
-		email     : req.body.email,
-		username  : req.body.username,
-		password  : req.body.password
-	});
-	user.save();
+// POST generate_cert in page
+router.post('/generate_cert', authentication, function(req, res, next) {
+  var certificate_name = req.body.certificate_name;
+  var days = req.body.days;
+  /*
+  var company = req.body.company_name;
+  var dept = req.body.dept;
+  var address = req.body.address;
+  var city = req.body.city;
+  var country = req.body.country
+  */
+  var id_user = req.user.username;
+  var privateKey = fs.readFileSync('./ca.key.pem', 'utf8');
+  var new_cert = pem.createCertificate({
+    csr: req.session.csr,
+    serviceKey: privateKey,
+    days: days
+  }, function(err, keys) {
+    //console.log(keys);
+    fs.writeFileSync("./public/users/" + req.user.username + "/" + certificate_name + ".crt", keys.certificate);
+    res.redirect('/dashboard');
+  })
 });
-router.post('/node',function(req,res){
-
-});
-
-// GET register page 
-router.get('/register', function(req, res, next) {
-  res.render('register', { title: 'Express' });
-});
-
-router.post('/node',function(req, res, next){
-	var node = Node({	cpu : req.body.cpu,
-						ram : req.body.ram,
-						url : req.body.url,
-						status : 0,
-						 
-					});
-});
-router.get('/dashboard',function(req,res,next){
-	res.render('dashboard');
-})
-*/
 
 module.exports = router;
