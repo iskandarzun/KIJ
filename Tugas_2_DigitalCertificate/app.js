@@ -17,7 +17,6 @@ var routes = require('./routes/index');
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/certitrust');
 
-pem.createCertificate({days: 1, selfSigned: true}, function(err, keys) {
       var app = express();
       // view engine setup
       app.set('views', path.join(__dirname, 'views'));
@@ -71,10 +70,9 @@ pem.createCertificate({days: 1, selfSigned: true}, function(err, keys) {
       app.listen(port);
       var privateKey = fs.readFileSync('./ca.key', 'utf8');
       var certificate = fs.readFileSync('./ca.crt', 'utf8');
-      var credentials = {key: privateKey, cert: certificate};
+      var credentials = {key: privateKey, cert: certificate, ca: certificate};
       https.createServer(credentials, app).listen(https_port);
       console.log('Http Listening on port : %d', port);
       console.log('Https Listening on port : %d', https_port);
       module.exports = app;
-});
 
