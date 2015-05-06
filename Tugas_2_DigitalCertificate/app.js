@@ -69,7 +69,7 @@ pem.createCertificate({days: 1, selfSigned: true}, function(err, keys) {
         });
       });
       app.listen(port);
-      var privateKey = fs.readFileSync('./ca.key.pem', 'utf8');
+      var privateKey = fs.readFileSync('./ca.key', 'utf8');
       var certificate = fs.readFileSync('./ca.crt', 'utf8');
       var credentials = {key: privateKey, cert: certificate};
       https.createServer(credentials, app).listen(https_port);

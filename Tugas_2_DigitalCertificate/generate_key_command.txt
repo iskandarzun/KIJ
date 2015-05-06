@@ -1,5 +1,8 @@
- #Generate RSA-2048 Private Key
- openssl genrsa -out ./file_name.key 2048
+ #Server Client
+	
+openssl genrsa -out server.key 1024
+openssl req -new -key server.key -out server.csr
 
- #Generate CSR SHA-256 with private key file_name.key 
- openssl req -new -sha256 -key ./file_name.key -out ./file_csr_name.csr
+#Signing
+openssl x509 -req -in server.csr -out server.crt -CA ca.crt -CAkey ca.key -CAcreateserial -days 365
+openssl x509 -in server.crt -text -noout

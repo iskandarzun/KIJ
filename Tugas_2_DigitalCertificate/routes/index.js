@@ -4,6 +4,9 @@ var mongoose = require('mongoose');
 var flash = require('connect-flash');
 var pem = require('pem');
 var fs = require('fs');
+var sys = require('sys')
+var exec = require('child_process').execSync;
+function puts(error, stdout, stderr) { sys.puts(stdout) }
 
 var session = require('express-session');
 var passport = require('passport'),
@@ -253,17 +256,32 @@ router.post('/generate_cert', authentication, function(req, res, next) {
   var city = req.body.city;
   var country = req.body.country
   */
-  var id_user = req.user.username;
-  var privateKey = fs.readFileSync('./ca.key.pem', 'utf8');
+  var privateKey = fs.readFileSync('./ca.key', 'utf8');
+  var ca_crt = fs.readFileSync('./ca.crt', 'utf8');
+  //console.log('generate\n');
+  var dirpath = "./public/users/" + req.user.username + "/";
+  fs.writeFileSync(dirpath + certificate_name + ".csr", req.session.csr)
+  var command = "openssl x509 -req -in " + dirpath + certificate_name + ".csr -out " + dirpath + certificate_name + ".crt -CA ./ca.crt -CAkey ./ca.key -CAcreateserial -days "+ days;
+  exec(command, puts);
+  console.log(command);
+  fs.unlink(dirpath + certificate_name + ".csr");
+
+  //console.log('finish\n');
+  
+  /*
   var new_cert = pem.createCertificate({
     csr: req.session.csr,
     serviceKey: privateKey,
+    serviceCertificate: ca_crt,
+    selfSigned: false,
+    serial: ,
     days: days
   }, function(err, keys) {
     //console.log(keys);
     fs.writeFileSync("./public/users/" + req.user.username + "/" + certificate_name + ".crt", keys.certificate);
+    */
     res.redirect('/dashboard');
-  })
+  //})
 });
 
 module.exports = router;
