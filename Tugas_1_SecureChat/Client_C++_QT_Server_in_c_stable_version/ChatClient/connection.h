@@ -8,6 +8,7 @@
 #include <math.h>
 #include <QObject>
 #include <QTcpSocket>
+#include <inttypes.h>
 #define MAX_BUFFER 8192
 #define MAX_STRING 4096
 #define WAIT_TIME 3000 //in miliseconds
